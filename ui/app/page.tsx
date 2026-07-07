@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,15 +13,52 @@ import {
   type Run,
 } from "@/lib/api";
 
+type VerdictFilter = "all" | "pass" | "warn" | "fail";
+
 export default function RunsPage() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const [verdict, setVerdict] = useState<VerdictFilter>("all");
+  const searchRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     fetchRuns().then(setRuns).catch((e) => setError(String(e)));
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "/" && document.activeElement !== searchRef.current) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const visible = useMemo(() => {
+    if (!runs) return [];
+    const q = query.toLowerCase();
+    return runs
+      .filter((r) => verdict === "all" || r.verdict === verdict)
+      .filter(
+        (r) =>
+          !q ||
+          r.run_id.toLowerCase().includes(q) ||
+          (r.task ?? "").toLowerCase().includes(q) ||
+          parseLabels(r.labels).some((l) => l.includes(q)),
+      )
+      .sort((a, b) => (b.started_at ?? 0) - (a.started_at ?? 0));
+  }, [runs, query, verdict]);
+
+  const counts = useMemo(() => {
+    const c = { all: runs?.length ?? 0, pass: 0, warn: 0, fail: 0 };
+    for (const r of runs ?? []) if (r.verdict && r.verdict in c) c[r.verdict as keyof typeof c]++;
+    return c;
+  }, [runs]);
 
   const toggle = (id: string) =>
     setPicked((p) =>
@@ -47,21 +84,52 @@ export default function RunsPage() {
       </p>
     );
 
+  const totalCost = visible.reduce((sum, r) => sum + (r.cost_usd ?? 0), 0);
+  const passRate = visible.length
+    ? visible.filter((r) => r.verdict === "pass").length / visible.length
+    : 0;
+
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
-        <h1 className="text-lg font-semibold">
-          Recorded runs <span className="text-zinc-500">({runs.length})</span>
-        </h1>
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h1 className="text-lg font-semibold">Runs</h1>
+        <span className="font-mono text-xs text-zinc-500">
+          {visible.length} shown · {Math.round(passRate * 100)}% pass ·{" "}
+          {fmtCost(totalCost)} total
+        </span>
+        <input
+          ref={searchRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="/ search id, task, label"
+          className="w-56 rounded border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-sm
+                     text-zinc-200 placeholder-zinc-600 outline-none focus:border-zinc-600"
+        />
+        <div className="flex gap-1">
+          {(["all", "pass", "warn", "fail"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setVerdict(v)}
+              className={`rounded px-2 py-0.5 font-mono text-xs ${
+                verdict === v
+                  ? (verdictStyle[v] ?? "bg-zinc-700 text-zinc-100") + " ring-1 ring-zinc-500"
+                  : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              {v} {counts[v]}
+            </button>
+          ))}
+        </div>
         <button
           disabled={picked.length !== 2}
           onClick={() => router.push(`/diff?a=${picked[0]}&b=${picked[1]}`)}
-          className="rounded border border-zinc-700 px-3 py-1 text-xs font-mono
+          className="ml-auto rounded border border-zinc-700 px-3 py-1 text-xs font-mono
                      text-zinc-300 enabled:hover:bg-zinc-800 disabled:opacity-40"
         >
-          diff {picked.length}/2 selected
+          diff {picked.length}/2
         </button>
       </div>
+
       <div className="overflow-x-auto rounded-lg border border-zinc-800">
         <table className="w-full text-sm">
           <thead className="bg-zinc-900 text-zinc-400 text-left">
@@ -77,7 +145,7 @@ export default function RunsPage() {
             </tr>
           </thead>
           <tbody>
-            {runs.map((run) => (
+            {visible.map((run) => (
               <tr
                 key={run.run_id}
                 className="border-t border-zinc-800/70 hover:bg-zinc-900/60"
@@ -135,6 +203,11 @@ export default function RunsPage() {
             ))}
           </tbody>
         </table>
+        {visible.length === 0 && (
+          <p className="px-4 py-6 text-sm text-zinc-500">
+            nothing matches — clear the search or filters
+          </p>
+        )}
       </div>
     </div>
   );

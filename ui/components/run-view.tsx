@@ -6,12 +6,71 @@ import {
   fetchEvents,
   fetchRun,
   fmtCost,
+  fmtDuration,
   promoteRun,
   type AgentEvent,
   type EventRow,
   type Promoted,
   type Run,
 } from "@/lib/api";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function contentPreview(content: any): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content))
+    return content
+      .map((b: AgentEvent) =>
+        b.type === "text"
+          ? b.text
+          : b.type === "tool_use"
+            ? `[tool_use ${b.name}]`
+            : b.type === "tool_result"
+              ? `[tool_result ${String(b.content).slice(0, 60)}]`
+              : `[${b.type}]`,
+      )
+      .join(" ");
+  return JSON.stringify(content);
+}
+
+function RequestView({ request }: { request: AgentEvent }) {
+  const messages: AgentEvent[] = request.messages ?? [];
+  const tools: AgentEvent[] = request.tools ?? [];
+  return (
+    <details className="text-xs">
+      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
+        request — {messages.length} message{messages.length === 1 ? "" : "s"}
+        {request.system ? " + system" : ""}
+        {tools.length ? ` + ${tools.length} tools` : ""}
+      </summary>
+      <div className="mt-2 max-h-72 space-y-1 overflow-auto rounded bg-zinc-900 p-3">
+        {request.system && (
+          <div className="flex gap-2">
+            <span className="w-20 shrink-0 font-mono text-violet-400">system</span>
+            <span className="whitespace-pre-wrap text-zinc-400">
+              {contentPreview(request.system).slice(0, 400)}
+            </span>
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className="flex gap-2">
+            <span className="w-20 shrink-0 font-mono text-zinc-500">{m.role}</span>
+            <span className="truncate text-zinc-300">
+              {contentPreview(m.content).slice(0, 300)}
+            </span>
+          </div>
+        ))}
+        {tools.length > 0 && (
+          <div className="flex gap-2 pt-1">
+            <span className="w-20 shrink-0 font-mono text-emerald-500">tools</span>
+            <span className="text-zinc-400">
+              {tools.map((t: AgentEvent) => t.name ?? t.type).join(", ")}
+            </span>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
 
 function forkSnippet(run: Run, seq: number): string {
   return [
@@ -149,6 +208,10 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
         </div>
       )}
 
+      {event.type === "llm_call" && event.request && (
+        <RequestView request={event.request} />
+      )}
+
       {(event.type === "llm_call" || event.type === "tool_call") && (
         <ForkHint run={run} seq={event.seq} />
       )}
@@ -173,6 +236,9 @@ export default function RunView({ id }: { id: string }) {
   const [promoted, setPromoted] = useState<Promoted | null>(null);
   const [promoteError, setPromoteError] = useState<string | null>(null);
   const [promoting, setPromoting] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<"all" | "llm_call" | "tool_call" | "failures">(
+    "all",
+  );
 
   useEffect(() => {
     fetchRun(id).then(setRun).catch((e) => setError(String(e)));
@@ -188,15 +254,23 @@ export default function RunView({ id }: { id: string }) {
       .finally(() => setPromoting(false));
   }, [id]);
 
+  const visible = (events ?? []).filter((row) =>
+    typeFilter === "all"
+      ? true
+      : typeFilter === "failures"
+        ? isFailure(row.event)
+        : row.event.type === typeFilter,
+  );
+
   const onKey = useCallback(
     (e: KeyboardEvent) => {
-      if (!events) return;
+      if (!visible.length) return;
       if (e.key === "ArrowDown" || e.key === "j")
-        setSelected((s) => Math.min(s + 1, events.length - 1));
+        setSelected((s) => Math.min(s + 1, visible.length - 1));
       if (e.key === "ArrowUp" || e.key === "k")
         setSelected((s) => Math.max(s - 1, 0));
     },
-    [events],
+    [visible.length],
   );
 
   useEffect(() => {
@@ -225,7 +299,7 @@ export default function RunView({ id }: { id: string }) {
         <span className="text-sm text-zinc-400">{run.task}</span>
         <span className="font-mono text-xs text-zinc-500">
           {run.model} · {run.input_tokens}/{run.output_tokens} tok ·{" "}
-          {fmtCost(run.cost_usd)}
+          {fmtCost(run.cost_usd)} · {fmtDuration(run.started_at, run.ended_at)}
         </span>
         {!STATIC && (
           <button
@@ -269,7 +343,12 @@ export default function RunView({ id }: { id: string }) {
               return (
                 <li key={i} className="text-sm">
                   <button
-                    onClick={() => idx >= 0 && setSelected(idx)}
+                    onClick={() => {
+                      if (idx >= 0) {
+                        setTypeFilter("all");
+                        setSelected(idx);
+                      }
+                    }}
                     className="text-left hover:underline"
                   >
                     <span
@@ -293,10 +372,36 @@ export default function RunView({ id }: { id: string }) {
         </div>
       )}
 
+      <div className="mb-2 flex gap-1">
+        {(
+          [
+            ["all", events.length],
+            ["llm_call", events.filter((r) => r.event.type === "llm_call").length],
+            ["tool_call", events.filter((r) => r.event.type === "tool_call").length],
+            ["failures", events.filter((r) => isFailure(r.event)).length],
+          ] as const
+        ).map(([key, n]) => (
+          <button
+            key={key}
+            onClick={() => {
+              setTypeFilter(key);
+              setSelected(0);
+            }}
+            className={`rounded px-2 py-0.5 font-mono text-xs ${
+              typeFilter === key
+                ? "bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500"
+                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            {key === "llm_call" ? "llm" : key === "tool_call" ? "tools" : key} {n}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* timeline */}
         <ol className="relative space-y-1">
-          {events.map((row, i) => {
+          {visible.map((row, i) => {
             const event = row.event;
             const failure = isFailure(event);
             return (
@@ -332,7 +437,11 @@ export default function RunView({ id }: { id: string }) {
 
         {/* inspector */}
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 lg:sticky lg:top-6 self-start">
-          <Inspector row={events[selected]} run={run} />
+          {visible.length > 0 ? (
+            <Inspector row={visible[Math.min(selected, visible.length - 1)]} run={run} />
+          ) : (
+            <p className="text-sm text-zinc-500">no events match this filter</p>
+          )}
         </div>
       </div>
       <p className="mt-4 text-xs text-zinc-600">

@@ -112,3 +112,9 @@ export const fmtCost = (c: number | null | undefined) =>
 
 export const fmtTime = (ts: number | null) =>
   ts == null ? "—" : new Date(ts * 1000).toLocaleString();
+
+export const fmtDuration = (start: number | null, end: number | null) => {
+  if (start == null || end == null) return "—";
+  const s = end - start;
+  return s < 1 ? `${Math.round(s * 1000)}ms` : `${s.toFixed(1)}s`;
+};
