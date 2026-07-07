@@ -83,7 +83,9 @@ def cmd_record(args: argparse.Namespace) -> int:
 
     run_id = args.run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = RUNS_DIR / run_id
-    session = Recorder(run_dir, live, make_tools(run_dir / "notes"))
+    session = Recorder(
+        run_dir, live, make_tools(run_dir / "notes"), db_path=RUNS_DIR / "agentscope.db"
+    )
 
     t0 = time.perf_counter()
     final_text, status = run_agent(session, args.task)

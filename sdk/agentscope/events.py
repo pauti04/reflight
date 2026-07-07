@@ -42,6 +42,11 @@ class RunLog:
         self._fh = self.path.open("w", encoding="utf-8")
         self._seq = 0
 
+    @property
+    def seq(self) -> int:
+        """The seq the next emitted event will get."""
+        return self._seq
+
     def emit(self, event_type: str, **payload: Any) -> dict:
         event = {
             "seq": self._seq,

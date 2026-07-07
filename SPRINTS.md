@@ -33,12 +33,12 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** from spike scripts to an installable SDK someone else could use.
 
-- [ ] Monorepo scaffold: `uv`, ruff, pytest, CI on push; Apache-2.0
-- [ ] Event schema v1 (typed + versioned): `run_start`, `llm_call`, `tool_call`, `state_snapshot`, `error`, `run_end`
-- [ ] Auto-instrumentation: wrap the Anthropic client — **≤3 lines to instrument an existing agent**
-- [ ] SQLite store; token + dollar cost computed per event at ingest
-- [ ] `agentscope runs` / `agentscope show <run_id>` CLI
-- [ ] Unit tests for recorder/replayer against schema v1
+- [x] Monorepo scaffold: `uv`, ruff, pytest, CI on push; Apache-2.0
+- [x] Event schema v1 (typed + versioned): `run_start`, `llm_call`, `tool_call`, `state_snapshot`, `error`, `run_end`
+- [x] Auto-instrumentation: wrap the Anthropic client — **≤3 lines to instrument an existing agent**
+- [x] SQLite store; token + dollar cost computed per event at ingest
+- [x] `agentscope runs` / `agentscope show <run_id>` CLI
+- [x] Unit tests for recorder/replayer against schema v1
 
 **Done when:** a fresh agent project can `pip install`, add 3 lines, and get recorded runs in SQLite.
 **Demo artifact:** the 3-line instrumentation diff + CLI output.

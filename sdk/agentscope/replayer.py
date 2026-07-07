@@ -7,9 +7,12 @@ code or prompt changed, it raises ReplayDivergence instead of lying.
 
 from __future__ import annotations
 
+import builtins
+import functools
+import inspect
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from anthropic.types import Message
 
@@ -20,12 +23,36 @@ class ReplayDivergence(Exception):
     """The agent's behavior during replay no longer matches the recording."""
 
 
+class ReplayedToolError(Exception):
+    """A tool failure from the recording, re-raised during replay when the
+    original exception type couldn't be reconstructed."""
+
+
+def _reconstruct_error(recorded: str) -> BaseException:
+    """Recorded tool errors look like 'ZeroDivisionError: division by zero'.
+    Re-raise the real builtin exception type when possible so agent code that
+    formats errors as f'{type(e).__name__}: {e}' reproduces the recording."""
+    error_type, _, message = recorded.partition(": ")
+    exc_class = getattr(builtins, error_type, None)
+    if isinstance(exc_class, type) and issubclass(exc_class, BaseException):
+        try:
+            return exc_class(message)
+        except Exception:
+            pass
+    return ReplayedToolError(recorded)
+
+
 class _ReplayMessages:
     def __init__(self, session: "Replayer"):
         self._session = session
 
     def create(self, **kwargs: Any):
         return self._session._llm_create(**kwargs)
+
+
+class _WrappedClient:
+    def __init__(self, session: Any):
+        self.messages = session.messages
 
 
 class Replayer:
@@ -47,12 +74,48 @@ class Replayer:
         self.replayed_status: str | None = None
         self.replayed_final_text: str | None = None
 
-    # -- session facade ------------------------------------------------------
+    # -- auto-instrumentation (mirror of Recorder) -----------------------------
+
+    def wrap(self, client: Any = None) -> _WrappedClient:
+        """Accepts and ignores a client/factory: replay never touches the network."""
+        del client
+        return _WrappedClient(self)
+
+    def tool(self, fn: Callable[..., str]) -> Callable[..., str]:
+        """Decorator: serve fn's calls from the recording instead of running it."""
+        name = fn.__name__
+        sig = inspect.signature(fn)
+
+        @functools.wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any):
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+            result, is_error = self.execute(name, dict(bound.arguments), "direct")
+            if is_error:
+                raise _reconstruct_error(result)
+            return result
+
+        return wrapper
+
+    # -- session facade -----------------------------------------------------------
 
     def start(self, task: str) -> None:
         pass  # nothing to record during replay
 
-    def end(self, status: str, final_text: str | None) -> None:
+    def snapshot(self, label: str, state: Any) -> None:
+        event = self._next("state_snapshot")
+        state_hash = hash_payload(to_jsonable(state))
+        if label != event["label"] or state_hash != event["state_hash"]:
+            raise ReplayDivergence(
+                f"state snapshot {label!r} at seq {event['seq']} diverged from the "
+                f"recording (agent state changed since this run was recorded)"
+            )
+        self.replay_log.append(("state_snapshot", state_hash))
+
+    def record_error(self, exc: BaseException) -> None:
+        pass
+
+    def end(self, status: str = "completed", final_text: str | None = None) -> None:
         self.replayed_status = status
         self.replayed_final_text = final_text
 
@@ -83,13 +146,13 @@ class Replayer:
         self.replay_log.append(("tool_call", input_hash))
         return event["result"], event["is_error"]
 
-    # -- internals -----------------------------------------------------------
+    # -- internals ------------------------------------------------------------------
 
     def _next(self, expected_type: str) -> dict:
         while self._cursor < len(self._events):
             event = self._events[self._cursor]
             self._cursor += 1
-            if event["type"] in ("run_start", "run_end"):
+            if event["type"] in ("run_start", "run_end", "error"):
                 continue
             if event["type"] != expected_type:
                 raise ReplayDivergence(
