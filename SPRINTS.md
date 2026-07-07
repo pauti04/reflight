@@ -156,7 +156,7 @@ Priority order set by the pre-launch assessment; reorder on real user feedback.
 - [x] Streaming replay: `messages.stream()` helper pattern — chunk-faithful record/replay/fork, governor at stream start (raw event iteration + OpenAI streaming still open)
 - [x] Parallel tool-call replay: thread-safe recorder + id-matching within the turn's tool block (any completion order replays; ids never match across turns)
 - [x] OpenTelemetry exporter: `reflight otel <run_id>` — root run span + chat/execute_tool child spans with GenAI attrs, honest between-event timestamps, error status on failed tools/killed runs; optional `reflight[otel]` extra
-- [ ] Promote/fork buttons in the timeline UI
+- [x] Promote button in the timeline UI (POST /api/runs/{id}/promote → YAML panel) + honest fork-from-event snippet with copy (fork needs your agent code, so the UI hands you the exact call)
 - [ ] Postgres + multi-tenant hosting (only when a team wants it)
 - [ ] Agent Ops control room (live fleet supervision — the sequel project)
 

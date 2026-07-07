@@ -2,13 +2,55 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  STATIC,
   fetchEvents,
   fetchRun,
   fmtCost,
+  promoteRun,
   type AgentEvent,
   type EventRow,
+  type Promoted,
   type Run,
 } from "@/lib/api";
+
+function forkSnippet(run: Run, seq: number): string {
+  return [
+    "import reflight",
+    "",
+    `session = reflight.fork(${JSON.stringify(run.run_dir)}, at_seq=${seq},`,
+    "                        client=your_live_client, tools=your_tools)",
+    "run_your_agent(session, session.task)  # replays to this event, goes live after",
+  ].join("\n");
+}
+
+function ForkHint({ run, seq }: { run: Run; seq: number }) {
+  const [copied, setCopied] = useState(false);
+  const snippet = forkSnippet(run, seq);
+  return (
+    <details className="text-xs">
+      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
+        fork from this event
+      </summary>
+      <div className="relative mt-2">
+        <pre className="overflow-x-auto rounded bg-zinc-900 p-3 text-emerald-200">
+          {snippet}
+        </pre>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(snippet).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            });
+          }}
+          className="absolute right-2 top-2 rounded border border-zinc-700 px-2 py-0.5
+                     font-mono text-zinc-400 hover:bg-zinc-800"
+        >
+          {copied ? "copied ✓" : "copy"}
+        </button>
+      </div>
+    </details>
+  );
+}
 
 const dotColor: Record<string, string> = {
   run_start: "bg-zinc-500",
@@ -53,7 +95,7 @@ function summarize(event: AgentEvent): string {
   }
 }
 
-function Inspector({ row }: { row: EventRow }) {
+function Inspector({ row, run }: { row: EventRow; run: Run }) {
   const event = row.event;
   const failure = isFailure(event);
   return (
@@ -107,6 +149,10 @@ function Inspector({ row }: { row: EventRow }) {
         </div>
       )}
 
+      {(event.type === "llm_call" || event.type === "tool_call") && (
+        <ForkHint run={run} seq={event.seq} />
+      )}
+
       <details className="text-xs">
         <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
           raw event payload
@@ -124,10 +170,22 @@ export default function RunView({ id }: { id: string }) {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [selected, setSelected] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [promoted, setPromoted] = useState<Promoted | null>(null);
+  const [promoteError, setPromoteError] = useState<string | null>(null);
+  const [promoting, setPromoting] = useState(false);
 
   useEffect(() => {
     fetchRun(id).then(setRun).catch((e) => setError(String(e)));
     fetchEvents(id).then(setEvents).catch((e) => setError(String(e)));
+  }, [id]);
+
+  const onPromote = useCallback(() => {
+    setPromoting(true);
+    setPromoteError(null);
+    promoteRun(id)
+      .then(setPromoted)
+      .catch((e) => setPromoteError(String(e)))
+      .finally(() => setPromoting(false));
   }, [id]);
 
   const onKey = useCallback(
@@ -169,7 +227,36 @@ export default function RunView({ id }: { id: string }) {
           {run.model} · {run.input_tokens}/{run.output_tokens} tok ·{" "}
           {fmtCost(run.cost_usd)}
         </span>
+        {!STATIC && (
+          <button
+            onClick={onPromote}
+            disabled={promoting || promoted !== null}
+            className="ml-auto rounded border border-sky-800 bg-sky-950/60 px-3 py-1
+                       font-mono text-xs text-sky-300 enabled:hover:bg-sky-900/60
+                       disabled:opacity-50"
+          >
+            {promoted ? "promoted ✓" : promoting ? "promoting…" : "⚡ promote to test"}
+          </button>
+        )}
       </div>
+
+      {promoteError && (
+        <p className="mb-4 font-mono text-xs text-red-400">{promoteError}</p>
+      )}
+      {promoted && (
+        <div className="mb-5 rounded-lg border border-sky-900/70 bg-sky-950/20 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-sky-300">
+            ✓ regression test written → {promoted.path}
+          </p>
+          <p className="mb-2 text-xs text-zinc-400">
+            Edit the assertions to state what SHOULD happen — then it runs in
+            your normal pytest invocation (see README: pytest plugin).
+          </p>
+          <pre className="max-h-64 overflow-auto rounded bg-zinc-900 p-3 text-xs text-zinc-300">
+            {promoted.yaml}
+          </pre>
+        </div>
+      )}
 
       {(run.findings?.length ?? 0) > 0 && (
         <div className="mb-5 rounded-lg border border-red-900/60 bg-red-950/30 p-3">
@@ -245,7 +332,7 @@ export default function RunView({ id }: { id: string }) {
 
         {/* inspector */}
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 lg:sticky lg:top-6 self-start">
-          <Inspector row={events[selected]} />
+          <Inspector row={events[selected]} run={run} />
         </div>
       </div>
       <p className="mt-4 text-xs text-zinc-600">

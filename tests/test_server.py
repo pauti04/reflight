@@ -32,6 +32,23 @@ def test_runs_endpoint(tmp_path):
     assert client.get("/api/runs/nope").status_code == 404
 
 
+def test_promote_endpoint(tmp_path):
+    db = tmp_path / "test.db"
+    run_dir = tmp_path / "runs" / "api-demo"
+    session = Recorder(run_dir, FakeAnthropic(), make_tools(run_dir / "notes"), db_path=db)
+    example.run_agent(session, TASK)
+
+    client = TestClient(create_app(db, tests_dir=tmp_path / "agent_tests"))
+    response = client.post("/api/runs/api-demo/promote")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["path"].endswith("api-demo.yaml")
+    assert "assertions" in body["yaml"]
+    assert (tmp_path / "agent_tests" / "api-demo.yaml").exists()
+
+    assert client.post("/api/runs/nope/promote").status_code == 404
+
+
 def test_events_endpoint(tmp_path):
     client = _client(tmp_path)
     events = client.get("/api/runs/api-demo/events").json()

@@ -16,7 +16,9 @@ from . import store
 DEFAULT_PORT = 8724  # "ASCP" on a phone keypad, near enough
 
 
-def create_app(db_path: str | Path = "runs/reflight.db") -> FastAPI:
+def create_app(
+    db_path: str | Path = "runs/reflight.db", tests_dir: str | Path = "agent_tests"
+) -> FastAPI:
     app = FastAPI(title="Reflight", version="0.1")
     app.add_middleware(
         CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
@@ -33,6 +35,16 @@ def create_app(db_path: str | Path = "runs/reflight.db") -> FastAPI:
             raise HTTPException(404, f"no run {run_id!r}")
         run["findings"] = store.get_findings(db_path, run_id)
         return run
+
+    @app.post("/api/runs/{run_id}/promote")
+    def promote_run(run_id: str) -> dict:
+        from .testing import promote
+
+        try:
+            path = promote(db_path, run_id, tests_dir)
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return {"path": str(path), "yaml": path.read_text()}
 
     @app.get("/api/costs")
     def get_costs() -> dict:

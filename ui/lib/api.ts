@@ -84,6 +84,15 @@ export const fetchDiff = async (a: string, b: string): Promise<Diff> => {
 export const fetchCosts = (): Promise<any> =>
   STATIC ? get("/demo/costs.json") : get("/api/costs");
 
+export type Promoted = { path: string; yaml: string };
+
+export async function promoteRun(id: string): Promise<Promoted> {
+  if (STATIC) throw new Error("read-only demo — clone the repo to promote runs");
+  const res = await fetch(`${API}/api/runs/${id}/promote`, { method: "POST" });
+  if (!res.ok) throw new Error(`${res.status} promoting ${id}`);
+  return res.json();
+}
+
 export const parseLabels = (labels: string | null): string[] => {
   try {
     return labels ? JSON.parse(labels) : [];
