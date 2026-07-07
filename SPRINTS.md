@@ -132,7 +132,8 @@ quickstart commands completed in ~3s (record, verify, import, verdict board). PA
 **Goal:** ship it to the world; harvest the portfolio assets.
 
 - [ ] Hosted read-only demo: pre-recorded flaky-agent runs, replayable in the browser, zero install (needs a host — user-gated)
-- [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test) (user records; script can be drafted on request)
+- [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test) — **shot-by-shot script drafted** in docs/demo-video-script.md; user records
+- [x] Launch post drafts (Show HN, X thread, r/LocalLLaMA) in docs/launch-posts.md
 - [x] Blog post #2: "How deterministic replay for AI agents works" (draft in docs/)
 - [ ] Show HN + r/LocalLLaMA + X thread; respond to feedback for a week (user-gated)
 - [x] Portfolio page: problem → demo → architecture → what I learned (draft in docs/)
