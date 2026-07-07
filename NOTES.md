@@ -1,0 +1,52 @@
+# NOTES — running observations, parked ideas, honest findings
+
+## Sprint 0 findings (2026-07-07)
+
+### Determinism: what we proved
+
+- Record → replay is byte-identical (event sequence, final answer, status) with
+  the network **hard-blocked** (socket monkeypatched in tests, not just no key).
+- A run containing a tool failure (ZeroDivisionError) replays identically —
+  failures are reproducible, which is the whole point.
+- Replay: ~7 ms, 0 API calls, $0.00 (recorded runs took real seconds/tokens).
+- Divergence is **detected, not hidden**: changing the system prompt after
+  recording makes replay raise ReplayDivergence at the first mismatched request
+  (request-hash comparison), instead of silently serving stale responses.
+
+### What breaks (or will break) determinism — the honest list
+
+- **Streaming** — not supported yet. `messages.stream()` needs chunk-level
+  recording. Deferred to Sprint 1/2; the facade makes the seam obvious.
+- **Timestamps/randomness in prompts** — anything volatile the agent puts in a
+  request changes its hash and (correctly) breaks replay. Mitigation later:
+  canonicalization hooks or fuzzy request matching. For now: keep prompts pure.
+- **Parallel tool calls** — currently executed sequentially in content-block
+  order, so ordering is stable. True concurrency will need matching by
+  tool_use_id instead of strict sequence. Known, not yet needed.
+- **SDK version drift** — recordings store `model_dump()` output; replaying
+  under a different anthropic SDK version could change validation/dump shape.
+  Mitigation later: store SDK version in run_start, warn on mismatch.
+- **Retries** — SDK-level automatic retries would record duplicate-ish calls.
+  Not encountered yet; revisit when using the live API under load.
+
+### Caveat
+
+Verified with the scripted offline model (`fake_model.py`) producing real
+`anthropic.types.Message` objects. The machinery is identical for the live API,
+but Sprint 0 isn't formally closed until one real-API run (needs
+ANTHROPIC_API_KEY) records and verifies. Confidence high; honesty higher.
+
+### Verdict
+
+**GO for Phase 1.** Replay determinism is real. The risky part of the whole
+project works.
+
+## Parked ideas (do NOT build these yet)
+
+- (add cost-governor / harness ideas here as they come up, per GAMEPLAN rule 1)
+
+## Naming
+
+⚠ "AgentScope" collides with Alibaba's established multi-agent framework
+(agentscope on PyPI/GitHub). Fine as a local working name; **must rename before
+any public launch** (Sprint 8 at the latest). Candidates: keep a shortlist here.
