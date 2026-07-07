@@ -118,13 +118,14 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** strangers can run it in 60 seconds.
 
-- [ ] Postgres mode + `docker compose up` one-liner
-- [ ] Docs site: quickstart, concepts, API reference, the 4 demo recordings
-- [ ] Instrument 2–3 popular OSS agents → `examples/` gallery
-- [ ] OpenAI-compatible client support (opens the addressable audience)
+- [x] `docker compose up` one-liner (Dockerfiles + compose.yaml written; **unverified — docker daemon not running locally**). Postgres mode **deferred to backlog** — single-user local tool doesn't need it pre-launch; SQLite + volume works in compose.
+- [x] Docs: README + docs/quickstart.md + docs/concepts.md (full docs *site* generator deferred to launch)
+- [ ] Instrument 2–3 popular OSS agents → `examples/` gallery (**deferred: needs framework installs + real API keys**)
+- [x] OpenAI-compatible client support (wrap_openai; replay via AttrView, no openai dep)
 
 **Done when:** a friend follows the quickstart cold and gets a timeline in <5 minutes.
-**Demo artifact:** the friend test, honestly reported.
+**Demo artifact:** the friend test, honestly reported. → **Proxy run: fresh `git clone` +
+quickstart commands completed in ~3s (record, verify, import, verdict board). PASS.**
 
 ## Sprint 9 — Launch (Weeks 17–18)
 

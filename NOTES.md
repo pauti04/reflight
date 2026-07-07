@@ -41,9 +41,16 @@ ANTHROPIC_API_KEY) records and verifies. Confidence high; honesty higher.
 **GO for Phase 1.** Replay determinism is real. The risky part of the whole
 project works.
 
-## Parked ideas (do NOT build these yet)
+## Parked / deferred (with reasons)
 
-- (add cost-governor / harness ideas here as they come up, per GAMEPLAN rule 1)
+- **Real-API verification run + judge accuracy check** — needs ANTHROPIC_API_KEY
+  or an `ant auth login` profile (checked: neither present).
+- **Postgres mode** — deferred pre-launch; SQLite covers the single-user local
+  tool. Revisit if a hosted multi-user demo needs it.
+- **OSS-agent examples gallery** — needs framework installs + live keys.
+- **docker compose** — files written, unverified (docker daemon not running).
+- **UI replay/fork controls** — timeline has keyboard stepping; live fork from
+  the UI needs an agent-execution bridge (post-launch).
 
 ## Naming
 
