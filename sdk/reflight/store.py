@@ -1,8 +1,14 @@
-"""SQLite index over recorded runs.
+"""Queryable index over recorded runs: SQLite by default, Postgres by URL.
 
 events.jsonl in each run directory stays the source of truth (replay reads it
 directly); the database is the query layer for the CLI and UI. Cost and
 failure classification are computed at ingest.
+
+Pass a path for SQLite (zero setup), or a postgresql:// URL for teams:
+
+    reflight --db postgresql://user:pass@host/reflight runs
+
+Postgres needs the extra: pip install 'reflight[postgres]'.
 """
 
 from __future__ import annotations
@@ -10,6 +16,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 from . import classify as classify_mod
 from . import schema
@@ -55,7 +62,61 @@ CREATE TABLE IF NOT EXISTS findings (
 """
 
 
-def connect(db_path: Path | str) -> sqlite3.Connection:
+def _is_postgres(db_path: Path | str) -> bool:
+    return str(db_path).startswith(("postgres://", "postgresql://"))
+
+
+class _PgAdapter:
+    """psycopg connection with the store's sqlite3 semantics: `with con:` is a
+    transaction (psycopg's own context manager would close the connection),
+    ?-placeholders, dict-like rows."""
+
+    def __init__(self, conn: Any):
+        self._conn = conn
+
+    def execute(self, sql: str, params: tuple = ()):
+        return self._conn.execute(sql.replace("?", "%s"), params)
+
+    def executemany(self, sql: str, rows: list[tuple]) -> None:
+        with self._conn.cursor() as cur:
+            cur.executemany(sql.replace("?", "%s"), rows)
+
+    def executescript(self, script: str) -> None:
+        for statement in script.split(";"):
+            if statement.strip():
+                self._conn.execute(statement)
+        self._conn.commit()
+
+    def __enter__(self) -> "_PgAdapter":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        if exc_type is None:
+            self._conn.commit()
+        else:
+            self._conn.rollback()
+        return False
+
+    def close(self) -> None:
+        self._conn.close()
+
+
+def _connect_postgres(url: str) -> _PgAdapter:
+    try:
+        import psycopg
+        from psycopg.rows import dict_row
+    except ImportError as exc:
+        raise RuntimeError(
+            "Postgres support needs psycopg — install with: pip install 'reflight[postgres]'"
+        ) from exc
+    adapter = _PgAdapter(psycopg.connect(url, row_factory=dict_row))
+    adapter.executescript(_TABLES)
+    return adapter
+
+
+def connect(db_path: Path | str):
+    if _is_postgres(db_path):
+        return _connect_postgres(str(db_path))
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(str(path))
@@ -112,7 +173,10 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
             [(run_id, f.seq, f.label, f.severity, f.confidence, f.detail) for f in findings],
         )
         con.execute(
-            """INSERT OR REPLACE INTO runs
+            "DELETE FROM runs WHERE run_id = ?", (run_id,)
+        )
+        con.execute(
+            """INSERT INTO runs
                (run_id, task, status, verdict, labels, started_at, ended_at, model,
                 input_tokens, output_tokens, cost_usd, final_text, event_count,
                 tool_errors, run_dir, agent)

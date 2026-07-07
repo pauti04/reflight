@@ -1,10 +1,11 @@
 # docker compose up → API on :8724, timeline UI on :3000.
+# Ports busy? REFLIGHT_UI_PORT=3100 REFLIGHT_API_PORT=8725 docker compose up
 # Record runs on the host (they land in ./runs); the API serves them read-only.
 services:
   api:
     build: .
     ports:
-      - "8724:8724"
+      - "${REFLIGHT_API_PORT:-8724}:8724"
     volumes:
       - ./runs:/app/runs
 
@@ -12,8 +13,8 @@ services:
     build:
       context: ./ui
       args:
-        NEXT_PUBLIC_REFLIGHT_API: http://localhost:8724
+        NEXT_PUBLIC_REFLIGHT_API: http://localhost:${REFLIGHT_API_PORT:-8724}
     ports:
-      - "3000:3000"
+      - "${REFLIGHT_UI_PORT:-3000}:3000"
     depends_on:
       - api

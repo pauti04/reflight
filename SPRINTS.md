@@ -118,7 +118,7 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** strangers can run it in 60 seconds.
 
-- [x] `docker compose up` one-liner (Dockerfiles + compose.yaml written; **unverified — docker daemon not running locally**). Postgres mode **deferred to backlog** — single-user local tool doesn't need it pre-launch; SQLite + volume works in compose.
+- [x] `docker compose up` one-liner — **verified 2026-07-07**: both containers healthy (API serving runs, UI rendering); ports made configurable (REFLIGHT_UI_PORT/REFLIGHT_API_PORT) after hitting a real port conflict. Postgres mode **deferred to backlog** — single-user local tool doesn't need it pre-launch; SQLite + volume works in compose.
 - [x] Docs: README + docs/quickstart.md + docs/concepts.md (full docs *site* generator deferred to launch)
 - [ ] Instrument 2–3 popular OSS agents → `examples/` gallery (**deferred: needs framework installs + real API keys**)
 - [x] OpenAI-compatible client support (wrap_openai; replay via AttrView, no openai dep)
@@ -157,7 +157,7 @@ Priority order set by the pre-launch assessment; reorder on real user feedback.
 - [x] Parallel tool-call replay: thread-safe recorder + id-matching within the turn's tool block (any completion order replays; ids never match across turns)
 - [x] OpenTelemetry exporter: `reflight otel <run_id>` — root run span + chat/execute_tool child spans with GenAI attrs, honest between-event timestamps, error status on failed tools/killed runs; optional `reflight[otel]` extra
 - [x] Promote button in the timeline UI (POST /api/runs/{id}/promote → YAML panel) + honest fork-from-event snippet with copy (fork needs your agent code, so the UI hands you the exact call)
-- [ ] Postgres + multi-tenant hosting (only when a team wants it)
+- [x] Postgres mode: postgresql:// URLs in every store call (`reflight --db postgresql://... runs`) via a thin psycopg adapter; tested against real PG locally + as a CI service container. Multi-tenant hosting still deferred.
 - [ ] Agent Ops control room (live fleet supervision — the sequel project)
 
 ---
