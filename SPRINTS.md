@@ -131,11 +131,12 @@ quickstart commands completed in ~3s (record, verify, import, verdict board). PA
 
 **Goal:** ship it to the world; harvest the portfolio assets.
 
-- [ ] Hosted read-only demo: pre-recorded flaky-agent runs, replayable in the browser, zero install
-- [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test)
-- [ ] Blog post #2: "How deterministic replay for AI agents works"
-- [ ] Show HN + r/LocalLLaMA + X thread; respond to feedback for a week
-- [ ] Portfolio page: problem → demo → architecture → what I learned
+- [ ] Hosted read-only demo: pre-recorded flaky-agent runs, replayable in the browser, zero install (needs a host — user-gated)
+- [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test) (user records; script can be drafted on request)
+- [x] Blog post #2: "How deterministic replay for AI agents works" (draft in docs/)
+- [ ] Show HN + r/LocalLLaMA + X thread; respond to feedback for a week (user-gated)
+- [x] Portfolio page: problem → demo → architecture → what I learned (draft in docs/)
+- [x] Rename decided + executed: **Reflight** (PyPI free at decision time — register on first publish)
 
 **Done when:** launched, and the portfolio page exists.
 **Demo artifact:** the launch itself.
