@@ -211,6 +211,7 @@ def cmd_export_static(args: argparse.Namespace) -> int:
         )
     (out / "runs.json").write_text(json.dumps(runs))
     (out / "costs.json").write_text(json.dumps(store.costs_summary(args.db)))
+    (out / "reliability.json").write_text(json.dumps(store.reliability_summary(args.db)))
     print(f"exported {len(runs)} runs → {out}")
     return 0
 

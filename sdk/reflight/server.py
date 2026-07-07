@@ -50,6 +50,10 @@ def create_app(
     def get_costs() -> dict:
         return store.costs_summary(db_path)
 
+    @app.get("/api/reliability")
+    def get_reliability() -> list[dict]:
+        return store.reliability_summary(db_path)
+
     @app.get("/api/diff")
     def get_diff(a: str, b: str) -> dict:
         from .diff import diff_runs

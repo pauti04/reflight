@@ -258,6 +258,57 @@ def add_finding(
     con.close()
 
 
+def reliability_summary(db_path: Path | str) -> list[dict]:
+    """Per-task consistency scoreboard: pass rate, verdict mix, failure-mode
+    histogram, answer stability, cost — the reliability.py report shape, but
+    over everything already in the db, grouped by task."""
+    runs = list_runs(db_path)
+
+    con = connect(db_path)
+    label_rows = list(
+        con.execute(
+            "SELECT r.task AS task, f.label AS label FROM findings f "
+            "JOIN runs r ON r.run_id = f.run_id"
+        )
+    )
+    con.close()
+    histograms: dict[str, dict[str, int]] = {}
+    for row in label_rows:
+        task_hist = histograms.setdefault(row["task"] or "—", {})
+        task_hist[row["label"]] = task_hist.get(row["label"], 0) + 1
+
+    groups: dict[str, list[dict]] = {}
+    for run in runs:
+        groups.setdefault(run["task"] or "—", []).append(run)
+
+    summary = []
+    for task, group in groups.items():
+        verdicts: dict[str, int] = {}
+        answers = set()
+        costs = [r["cost_usd"] for r in group if r["cost_usd"] is not None]
+        for run in group:
+            verdicts[run["verdict"] or "?"] = verdicts.get(run["verdict"] or "?", 0) + 1
+            if run["final_text"]:
+                answers.add(run["final_text"])
+        passes = verdicts.get("pass", 0)
+        summary.append(
+            {
+                "task": task,
+                "runs": len(group),
+                "passes": passes,
+                "pass_rate": passes / len(group) if group else 0.0,
+                "verdicts": verdicts,
+                "failure_histogram": dict(
+                    sorted(histograms.get(task, {}).items(), key=lambda kv: -kv[1])
+                ),
+                "distinct_answers": len(answers),
+                "cost_mean": sum(costs) / len(costs) if costs else None,
+                "total_cost": sum(costs) if costs else 0.0,
+            }
+        )
+    return sorted(summary, key=lambda s: -s["runs"])
+
+
 def costs_summary(db_path: Path | str, anomaly_factor: float = 2.0) -> dict:
     """Cost aggregates per task, per agent, and per day, with anomaly flags
     (runs costing more than anomaly_factor × their task's median)."""

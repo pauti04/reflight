@@ -1,5 +1,6 @@
 """Sprint 2: REST endpoints over the store."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 import main as example
@@ -30,6 +31,35 @@ def test_runs_endpoint(tmp_path):
     run = client.get("/api/runs/api-demo").json()
     assert run["model"] == "claude-sonnet-5"
     assert client.get("/api/runs/nope").status_code == 404
+
+
+def test_reliability_endpoint(tmp_path):
+    from flaky_model import FlakyAnthropic
+
+    db = tmp_path / "test.db"
+    task = "What is the population of Tokyo, and what is that number divided by 2?"
+    for seed in range(6):  # 2 pass, 2 loop, 2 wrong-args
+        run_dir = tmp_path / "runs" / f"flaky-{seed:02d}"
+        session = Recorder(
+            run_dir, FlakyAnthropic(seed), make_tools(run_dir / "notes"), db_path=db
+        )
+        example.run_agent(session, task)
+
+    client = TestClient(create_app(db))
+    reports = client.get("/api/reliability").json()
+    assert len(reports) == 1
+    report = reports[0]
+    assert report["task"] == task
+    assert report["runs"] == 6
+    assert report["passes"] == 2
+    assert report["pass_rate"] == pytest.approx(2 / 6)
+    assert report["verdicts"] == {"pass": 2, "fail": 4}
+    assert report["failure_histogram"]["loop"] == 2
+    assert report["failure_histogram"]["wrong_tool_args"] == 4  # 2 runs × 2 bad calls
+    assert report["failure_histogram"]["tool_error_cascade"] == 2
+    # 2 identical good answers + 1 loop answer + 1 no-data answer = 3 distinct
+    assert report["distinct_answers"] == 3
+    assert report["total_cost"] > 0
 
 
 def test_promote_endpoint(tmp_path):

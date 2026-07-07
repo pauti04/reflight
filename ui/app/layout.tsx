@@ -36,6 +36,9 @@ export default function RootLayout({
             <Link href="/" className="text-zinc-400 hover:text-zinc-100">
               runs
             </Link>
+            <Link href="/reliability" className="text-zinc-400 hover:text-zinc-100">
+              reliability
+            </Link>
             <Link href="/costs" className="text-zinc-400 hover:text-zinc-100">
               costs
             </Link>
