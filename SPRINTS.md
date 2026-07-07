@@ -20,7 +20,7 @@ its definition of done.
 - [x] `replayer.py`: re-run agent with all external I/O served from the recording
 - [x] `--step` mode: pause per event, print payload
 - [x] `NOTES.md`: what breaks determinism (streaming? parallel tools? timestamps?)
-- [ ] Formal close-out: one run recorded against the **real API** verifies (needs ANTHROPIC_API_KEY)
+- [x] Formal close-out: one run recorded against the **real API** verifies — done 2026-07-07 via the OpenAI-compatible path (examples/live_api_check.py): two sequential live gpt-4o-mini calls, replayed byte-identical with sockets blocked, $0.00
 
 **Done when:** a recorded run — including a *failed* one — replays byte-identical
 with networking off, in <2s, at $0.00.
@@ -73,7 +73,7 @@ with networking off, in <2s, at $0.00.
 
 - [x] LLM-judge classifier for failures rules can't catch (bad reasoning, wrong answer) — `reflight judge`, injectable client
 - [x] Fork mode: replay to step N, go live from there (test a fix mid-run) — forks are complete runs, diffable vs the original
-- [ ] Judge accuracy sanity check against ~20 hand-labeled runs (needs real API credentials — parked with the Sprint 0 close-out)
+- [x] Judge accuracy sanity check — done 2026-07-07 with a real LLM judge (gpt-4o-mini via adapter) over 12 seeded-ground-truth runs: **12/12 = 100%** (examples/flaky_agent/judge_accuracy.py). Found + fixed a judge_run aggregation bug: `task_completed` alone scored honest "couldn't answer" runs as ok; verdict now trusts the judge's label.
 
 **Done when:** a hallucination-style failure gets a sensible judge label; a fix can be tested via fork without re-running from scratch.
 **Demo artifact:** 🎬 **Milestone demo #2** — failure labeled, forked, fixed.

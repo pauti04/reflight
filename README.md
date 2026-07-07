@@ -136,6 +136,11 @@ path; it is **not** time travel for arbitrary changes — that's what fork mode
 and live re-verification are for. Known limits (streaming, volatile prompt
 content, parallel tool calls) are tracked in [NOTES.md](NOTES.md).
 
+Verified against a real API: [examples/live_api_check.py](examples/live_api_check.py)
+records two dependent live calls and replays them byte-identically with the
+network blocked. Judge accuracy vs seeded ground truth: 12/12
+([examples/flaky_agent/judge_accuracy.py](examples/flaky_agent/judge_accuracy.py)).
+
 ## Layout
 
 ```

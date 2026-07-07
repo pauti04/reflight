@@ -70,7 +70,14 @@ def judge_run(events: list[dict], client: Any, model: str = JUDGE_MODEL) -> dict
     )
     text = "".join(b.text for b in response.content if b.type == "text")
     verdict = _parse_verdict(text)
-    ok = bool(verdict.get("task_completed")) and verdict.get("answer_correct") is not False
+    # The label is the judge's conclusion — trust it. (task_completed alone is
+    # too lenient: an honest "I couldn't find the data" completes the
+    # *conversation* without accomplishing the task.)
+    ok = (
+        str(verdict.get("label", "ok")) == "ok"
+        and bool(verdict.get("task_completed"))
+        and verdict.get("answer_correct") is not False
+    )
     return {
         "ok": ok,
         "label": str(verdict.get("label", "ok")),
