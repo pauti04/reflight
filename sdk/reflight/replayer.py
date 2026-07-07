@@ -11,6 +11,7 @@ import builtins
 import functools
 import inspect
 import sys
+import threading
 from pathlib import Path
 from typing import Any, Callable
 
@@ -119,6 +120,8 @@ class Replayer:
         self.run_dir = Path(run_dir)
         self._events = read_events(self.run_dir)
         self._cursor = 0
+        self._consumed: set[int] = set()
+        self._match_lock = threading.Lock()
         self.step = step
         self.messages = _ReplayMessages(self)
         self.replay_log: list[tuple[str, str]] = []
@@ -217,24 +220,79 @@ class Replayer:
         return ReplayStream(self._match_llm(kwargs))
 
     def execute(self, name: str, tool_input: dict, tool_use_id: str) -> tuple[str, bool]:
-        event = self._next("tool_call")
+        """Tool calls match by tool_use_id within the current turn's tool block,
+        so agents that execute a turn's tool calls concurrently replay correctly
+        regardless of completion order. Falls back to (name, input) matching for
+        synthesized ids (the @session.tool decorator path)."""
         input_hash = hash_payload(to_jsonable(tool_input))
-        if name != event["name"] or input_hash != event["input_hash"]:
-            raise ReplayDivergence(
-                f"tool call at seq {event['seq']} diverged: agent called "
-                f"{name}({tool_input!r}), recording has {event['name']}({event['input']!r})"
-            )
+        with self._match_lock:
+            block = self._tool_block()
+            if not block:
+                event = self._next("tool_call")  # raises the right divergence message
+                raise ReplayDivergence(  # pragma: no cover — _next always raises here
+                    f"unexpected event at seq {event['seq']}"
+                )
+            event = None
+            for idx in block:  # 1) exact id match (ids come from replayed responses)
+                candidate = self._events[idx]
+                if candidate["tool_use_id"] == tool_use_id:
+                    if candidate["name"] != name or candidate["input_hash"] != input_hash:
+                        raise ReplayDivergence(
+                            f"tool call {tool_use_id} at seq {candidate['seq']} diverged: "
+                            f"agent called {name}({tool_input!r}), recording has "
+                            f"{candidate['name']}({candidate['input']!r})"
+                        )
+                    event = candidate
+                    break
+            if event is None:  # 2) fallback: same name + same arguments
+                for idx in block:
+                    candidate = self._events[idx]
+                    if candidate["name"] == name and candidate["input_hash"] == input_hash:
+                        event = candidate
+                        idx_found = idx
+                        break
+                else:
+                    first = self._events[block[0]]
+                    recorded = [
+                        (self._events[i]["name"], self._events[i]["tool_use_id"]) for i in block
+                    ]
+                    raise ReplayDivergence(
+                        f"tool call at seq {first['seq']} diverged: agent called "
+                        f"{name}({tool_input!r}), recording's pending tool calls are {recorded}"
+                    )
+                idx = idx_found
+            self._consumed.add(idx)
+            self.replay_log.append(("tool_call", input_hash))
         if self.step:
             self._pause(event)
-        self.replay_log.append(("tool_call", input_hash))
         return event["result"], event["is_error"]
 
     # -- internals ------------------------------------------------------------------
 
+    def _tool_block(self) -> list[int]:
+        """Indices of the contiguous unconsumed tool_call events at the cursor —
+        the current turn's parallel window. Stops at the next llm/snapshot event
+        so ids can never match across turns."""
+        block = []
+        cursor = self._cursor
+        while cursor < len(self._events):
+            event = self._events[cursor]
+            if cursor in self._consumed or event["type"] in ("run_start", "run_end", "error"):
+                cursor += 1
+                continue
+            if event["type"] != "tool_call":
+                break
+            block.append(cursor)
+            cursor += 1
+        return block
+
     def _next(self, expected_type: str) -> dict:
         while self._cursor < len(self._events):
-            event = self._events[self._cursor]
+            index = self._cursor
             self._cursor += 1
+            if index in self._consumed:
+                continue
+            event = self._events[index]
             if event["type"] in ("run_start", "run_end", "error"):
                 continue
             if event["type"] != expected_type:

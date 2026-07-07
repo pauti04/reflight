@@ -23,9 +23,14 @@
 - **Timestamps/randomness in prompts** — anything volatile the agent puts in a
   request changes its hash and (correctly) breaks replay. Mitigation later:
   canonicalization hooks or fuzzy request matching. For now: keep prompts pure.
-- **Parallel tool calls** — currently executed sequentially in content-block
-  order, so ordering is stable. True concurrency will need matching by
-  tool_use_id instead of strict sequence. Known, not yet needed.
+- **Parallel tool calls** — ✅ CLOSED (Sprint 10, 2026-07-07): the recorder is
+  thread-safe (event log / totals / governor locks) and the replayer matches
+  tool calls by tool_use_id within the current turn's tool block (name+args
+  fallback for the decorator path's synthesized ids), so any completion order
+  replays. Ids never match across turns. Caveats: fork mode still replays its
+  prefix sequentially; run-diff compares event order literally, so two
+  recordings of the same parallel agent can show a spurious divergence inside
+  a tool block (order-insensitive diff signatures would fix this at ingest).
 - **SDK version drift** — recordings store `model_dump()` output; replaying
   under a different anthropic SDK version could change validation/dump shape.
   Mitigation later: store SDK version in run_start, warn on mismatch.

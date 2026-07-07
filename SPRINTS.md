@@ -154,7 +154,7 @@ Priority order set by the pre-launch assessment; reorder on real user feedback.
       inert when unconfigured)
 - [ ] Framework adapters: LangGraph / CrewAI / Claude Agent SDK auto-instrumentation
 - [x] Streaming replay: `messages.stream()` helper pattern — chunk-faithful record/replay/fork, governor at stream start (raw event iteration + OpenAI streaming still open)
-- [ ] Parallel tool-call replay (match by tool_use_id instead of strict sequence)
+- [x] Parallel tool-call replay: thread-safe recorder + id-matching within the turn's tool block (any completion order replays; ids never match across turns)
 - [ ] OpenTelemetry exporter (GenAI semantic conventions — composability with Langfuse/Datadog)
 - [ ] Promote/fork buttons in the timeline UI
 - [ ] Postgres + multi-tenant hosting (only when a team wants it)

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import threading
 from pathlib import Path
 from typing import Any, Callable
 
@@ -86,6 +87,7 @@ class Recorder:
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_cost_usd = 0.0
+        self._totals_lock = threading.Lock()
         self._started = False
         self._ended = False
 
@@ -211,13 +213,14 @@ class Recorder:
     ) -> None:
         request = to_jsonable(kwargs)
         usage = data.get("usage") or {}
-        self.total_input_tokens += usage.get("input_tokens") or 0
-        self.total_output_tokens += usage.get("output_tokens") or 0
         from .pricing import cost_usd
 
         call_cost = cost_usd(data.get("model"), usage)
-        if call_cost is not None:
-            self.total_cost_usd += call_cost
+        with self._totals_lock:
+            self.total_input_tokens += usage.get("input_tokens") or 0
+            self.total_output_tokens += usage.get("output_tokens") or 0
+            if call_cost is not None:
+                self.total_cost_usd += call_cost
         extra = {"stream": {"text_chunks": stream_chunks}} if stream_chunks is not None else {}
         self.log.emit(
             "llm_call",

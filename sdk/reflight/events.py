@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,7 @@ class RunLog:
         self.path = self.run_dir / "events.jsonl"
         self._fh = self.path.open("w", encoding="utf-8")
         self._seq = 0
+        self._lock = threading.Lock()  # agents may execute tool calls concurrently
 
     @property
     def seq(self) -> int:
@@ -48,17 +50,18 @@ class RunLog:
         return self._seq
 
     def emit(self, event_type: str, **payload: Any) -> dict:
-        event = {
-            "seq": self._seq,
-            "schema": SCHEMA_VERSION,
-            "ts": time.time(),
-            "type": event_type,
-            **payload,
-        }
-        self._fh.write(json.dumps(to_jsonable(event), ensure_ascii=False) + "\n")
-        self._fh.flush()
-        self._seq += 1
-        return event
+        with self._lock:
+            event = {
+                "seq": self._seq,
+                "schema": SCHEMA_VERSION,
+                "ts": time.time(),
+                "type": event_type,
+                **payload,
+            }
+            self._fh.write(json.dumps(to_jsonable(event), ensure_ascii=False) + "\n")
+            self._fh.flush()
+            self._seq += 1
+            return event
 
     def close(self) -> None:
         if not self._fh.closed:

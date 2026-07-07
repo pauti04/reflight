@@ -144,10 +144,11 @@ served from the recording, verifying at each step that the code is making the
 *same* requests it made before — a changed prompt or tool raises
 `ReplayDivergence` instead of lying. Replay is deterministic for the recorded
 path; it is **not** time travel for arbitrary changes — that's what fork mode
-and live re-verification are for. Streaming agents are supported: the
-`messages.stream()` helper pattern replays chunk-identically. Remaining limits
-(raw stream-event iteration, OpenAI chat streaming, volatile prompt content,
-parallel tool calls) are tracked in [NOTES.md](NOTES.md).
+and live re-verification are for. Streaming agents are supported (the
+`messages.stream()` helper pattern replays chunk-identically), and so are
+**parallel tool calls** — replay matches by `tool_use_id`, so any completion
+order replays. Remaining limits (raw stream-event iteration, OpenAI chat
+streaming, volatile prompt content) are tracked in [NOTES.md](NOTES.md).
 
 Verified against a real API: [examples/live_api_check.py](examples/live_api_check.py)
 records two dependent live calls and replays them byte-identically with the
