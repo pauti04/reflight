@@ -145,6 +145,22 @@ quickstart commands completed in ~3s (record, verify, import, verdict board). PA
 
 ---
 
+## Sprint 10 — Post-launch upgrades (backlog-driven)
+
+Priority order set by the pre-launch assessment; reorder on real user feedback.
+
+- [x] pytest plugin: promoted YAML tests collect + run in a normal `pytest` invocation
+      (pytest11 entry point; ini config via dotted paths; replay-first; readable failures;
+      inert when unconfigured)
+- [ ] Framework adapters: LangGraph / CrewAI / Claude Agent SDK auto-instrumentation
+- [ ] Streaming + parallel tool-call replay (the two honest determinism gaps in NOTES.md)
+- [ ] OpenTelemetry exporter (GenAI semantic conventions — composability with Langfuse/Datadog)
+- [ ] Promote/fork buttons in the timeline UI
+- [ ] Postgres + multi-tenant hosting (only when a team wants it)
+- [ ] Agent Ops control room (live fleet supervision — the sequel project)
+
+---
+
 ## Deliberately NOT doing (backlog, revisit post-launch)
 
 - TypeScript SDK · LangGraph/CrewAI adapters · multi-tenant hosted SaaS ·

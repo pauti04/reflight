@@ -11,6 +11,9 @@ dependencies = [
     "pyyaml>=6",
 ]
 
+[project.entry-points.pytest11]
+reflight = "reflight.pytest_plugin"
+
 [project.scripts]
 reflight = "reflight.cli:main"
 

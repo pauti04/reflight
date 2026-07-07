@@ -95,10 +95,21 @@ client = session.wrap()
 uv run reflight promote my-failed-run       # → agent_tests/my-failed-run.yaml
 ```
 
-Edit the assertions to state what SHOULD happen, then run the suite from your
-test code (`reflight.testing.run_suite`). Replay-first economics: passing
-tests cost $0.00; replay failures are re-verified live; code changes trigger a
-live re-run. See the full loop in
+Edit the assertions to state what SHOULD happen — then they're just pytest
+tests. Point pytest at your agent once:
+
+```ini
+# pytest.ini
+[pytest]
+reflight_agent = my_pkg.agent:run_agent            # agent(session, task)
+reflight_tools_factory = my_pkg.agent:make_tools   # optional
+reflight_client_factory = my_pkg.agent:make_client # optional: enables live re-verify
+```
+
+and every `agent_tests/*.yaml` collects and runs in your normal `pytest`
+invocation. Replay-first economics: passing tests cost $0.00; replay failures
+are re-verified live; code changes trigger a live re-run. Programmatic
+alternative: `reflight.testing.run_suite`. See the full loop in
 [examples/flaky_agent/regression_demo.py](examples/flaky_agent/regression_demo.py)
 and the CI gate in [examples/flaky_agent/ci_gate.py](examples/flaky_agent/ci_gate.py).
 
