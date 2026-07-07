@@ -1,0 +1,17 @@
+name: Agent reliability gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      # Blocks the merge when the agent's reliability regresses vs baseline.json:
+      # pass-rate drop, new failure modes, cost blowup, or a failing promoted test.
+      # Report lands in the PR checks summary via GITHUB_STEP_SUMMARY.
+      - run: uv run python examples/flaky_agent/ci_gate.py

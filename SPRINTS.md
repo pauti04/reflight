@@ -94,10 +94,10 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the reliability harness, complete. End of Phase 3.
 
-- [ ] Consistency report: pass rate, variance, cost spread, failure-mode histogram over N runs
-- [ ] Baselines + regression diff across model/prompt/code versions
-- [ ] GitHub Action: run promoted tests + N-run suite, fail PR on regression, readable PR comment
-- [ ] Blog post #1 draft: "Your agent's failures should be regression tests"
+- [x] Consistency report: pass rate, variance, cost spread, failure-mode histogram over N runs
+- [x] Baselines + regression diff across model/prompt/code versions (tolerances for pass-rate wobble + cost growth)
+- [x] GitHub Action: run promoted tests + N-run suite, fail PR on regression, readable report via GITHUB_STEP_SUMMARY (PR checks page)
+- [x] Blog post #1 draft: "Your agent's failures should be regression tests" (docs/)
 
 **Done when:** a PR that subtly degrades the flaky agent is blocked by CI with a report a stranger can read.
 **Demo artifact:** 🎬 **Milestone demo #3** — the blocked PR.

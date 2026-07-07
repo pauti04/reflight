@@ -1,0 +1,22 @@
+{
+  "task": "What is the population of Tokyo, and what is that number divided by 2?",
+  "n": 10,
+  "completed": 10,
+  "passes": 4,
+  "pass_rate": 0.4,
+  "verdicts": {
+    "pass": 4,
+    "fail": 6
+  },
+  "failure_histogram": {
+    "loop": 3,
+    "wrong_tool_args": 6,
+    "tool_error_cascade": 3
+  },
+  "distinct_answers": 3,
+  "cost_mean": 0.0039816,
+  "cost_min": 0.0029879999999999998,
+  "cost_max": 0.0063,
+  "cost_stdev": 0.0015998479927793142,
+  "total_cost": 0.039816
+}
