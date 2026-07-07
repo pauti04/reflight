@@ -47,10 +47,10 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the flight-recorder experience. End of Phase 1.
 
-- [ ] FastAPI query endpoints (runs list, run detail, event payloads)
-- [ ] Next.js UI: runs list → run timeline → event inspector (prompt/response/tool args/cost)
-- [ ] Replay step-through wired into the UI (or polished CLI stepper if UI replay slips)
-- [ ] Failed events visually flagged on the timeline
+- [x] FastAPI query endpoints (runs list, run detail, event payloads) — `agentscope serve`
+- [x] Next.js UI: runs list → run timeline → event inspector (prompt/response/tool args/cost)
+- [x] Replay step-through wired into the UI (keyboard ↑/↓ stepper; live fork/replay from UI comes with Phase 2 fork mode) — CLI `replay --step` remains
+- [x] Failed events visually flagged on the timeline
 
 **Done when:** you can watch any recorded run like a video and inspect every step.
 **Demo artifact:** 🎬 **Milestone demo #1** — instrument in 3 lines, run, watch, replay a failure.

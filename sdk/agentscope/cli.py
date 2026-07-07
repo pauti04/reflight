@@ -88,6 +88,14 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .server import serve
+
+    print(f"AgentScope API on http://{args.host}:{args.port}  (db: {args.db})")
+    serve(args.db, host=args.host, port=args.port)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agentscope", description=__doc__)
     parser.add_argument("--db", default="runs/agentscope.db", help="database path")
@@ -103,6 +111,11 @@ def main(argv: list[str] | None = None) -> int:
     p_show = sub.add_parser("show", help="event timeline for one run")
     p_show.add_argument("run_id")
     p_show.set_defaults(fn=cmd_show)
+
+    p_serve = sub.add_parser("serve", help="start the query API for the timeline UI")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8724)
+    p_serve.set_defaults(fn=cmd_serve)
 
     args = parser.parse_args(argv)
     return args.fn(args)
