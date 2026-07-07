@@ -132,6 +132,34 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_costs(args: argparse.Namespace) -> int:
+    summary = store.costs_summary(args.db)
+    if not summary["runs"]:
+        print("no priced runs in the db")
+        return 0
+    print(f"total: {_fmt_cost(summary['total_usd'])} across {summary['runs']} runs\n")
+    for section in ("per_task", "per_agent", "per_day"):
+        rows = summary[section]
+        if len(rows) == 1 and rows[0]["key"] == "—" and section == "per_agent":
+            continue  # nobody set agent_name — skip the empty grouping
+        print(f"{section.replace('_', ' ')}:")
+        for row in rows:
+            key = row["key"][:56]
+            print(
+                f"  {key:58} {row['runs']:3} runs  {_fmt_cost(row['total_usd']):>9} total  "
+                f"{_fmt_cost(row['mean_usd'])} mean"
+            )
+        print()
+    if summary["anomalies"]:
+        print("⚠ anomalies (cost ≫ task median):")
+        for a in summary["anomalies"]:
+            print(
+                f"  {a['run_id']:24} {_fmt_cost(a['cost_usd'])} "
+                f"({a['factor']:.1f}× the task median {_fmt_cost(a['median_usd'])})"
+            )
+    return 0
+
+
 def cmd_promote(args: argparse.Namespace) -> int:
     from .testing import promote
 
@@ -198,6 +226,9 @@ def main(argv: list[str] | None = None) -> int:
     p_diff.add_argument("run_a")
     p_diff.add_argument("run_b")
     p_diff.set_defaults(fn=cmd_diff)
+
+    p_costs = sub.add_parser("costs", help="cost dashboard: per task/agent/day + anomalies")
+    p_costs.set_defaults(fn=cmd_costs)
 
     p_promote = sub.add_parser("promote", help="turn a recorded run into a regression test")
     p_promote.add_argument("run_id")

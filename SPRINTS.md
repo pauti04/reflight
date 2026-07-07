@@ -106,10 +106,10 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** budgets and the ChainCheck-v2 circuit breaker.
 
-- [ ] Per-run / per-agent budgets (tokens + dollars), hard enforcement with recorded kill reason
-- [ ] Loop circuit breaker (detection already exists from Sprint 3 — now it *acts*)
-- [ ] Identical-tool-call cache with hit-rate stats
-- [ ] Cost dashboard: per task / per agent / per day, anomaly flags
+- [x] Per-run / per-agent budgets (tokens + dollars + llm-call count), hard enforcement with recorded kill reason (error event + status "killed" + governor_kill label)
+- [x] Loop circuit breaker (detection already exists from Sprint 3 — now it *acts*)
+- [x] Identical-tool-call cache with hit-rate stats (cached calls still recorded, flagged `cached`)
+- [x] Cost dashboard: per task / per agent / per day, anomaly flags (`agentscope costs`, /api/costs, /costs page)
 
 **Done when:** a runaway agent is killed at a $0.50 budget and the dashboard shows the save.
 **Demo artifact:** 🎬 **Milestone demo #4** — the kill, on the timeline.

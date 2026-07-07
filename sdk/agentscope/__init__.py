@@ -16,6 +16,7 @@ from typing import Any
 
 from .events import RunLog, hash_payload, read_events, to_jsonable
 from .fork import ForkSession
+from .governor import Governor, GovernorKill
 from .recorder import Recorder
 from .replayer import ReplayDivergence, ReplayedToolError, Replayer
 
@@ -23,6 +24,8 @@ __all__ = [
     "Recorder",
     "Replayer",
     "ForkSession",
+    "Governor",
+    "GovernorKill",
     "ReplayDivergence",
     "ReplayedToolError",
     "RunLog",
@@ -42,9 +45,13 @@ def record(
     client: Any = None,
     tools: dict | None = None,
     db_path: Path | str | None = None,
+    governor: Any = None,
+    agent_name: str | None = None,
 ) -> Recorder:
     """Create a recording session. Sugar over Recorder(...) + start()."""
-    session = Recorder(run_dir, tools=tools, db_path=db_path)
+    session = Recorder(
+        run_dir, tools=tools, db_path=db_path, governor=governor, agent_name=agent_name
+    )
     if client is not None:
         session.wrap(client)
     session.start(task)

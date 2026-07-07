@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS runs (
     final_text    TEXT,
     event_count   INTEGER,
     tool_errors   INTEGER,
-    run_dir       TEXT
+    run_dir       TEXT,
+    agent         TEXT
 );
 CREATE TABLE IF NOT EXISTS events (
     run_id   TEXT,
@@ -62,7 +63,7 @@ def connect(db_path: Path | str) -> sqlite3.Connection:
     con.executescript(_TABLES)
     # dev-stage migration: add columns introduced after a db was created
     existing = {row["name"] for row in con.execute("PRAGMA table_info(runs)")}
-    for column in ("verdict", "labels"):
+    for column in ("verdict", "labels", "agent"):
         if column not in existing:
             con.execute(f"ALTER TABLE runs ADD COLUMN {column} TEXT")
     return con
@@ -114,8 +115,8 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
             """INSERT OR REPLACE INTO runs
                (run_id, task, status, verdict, labels, started_at, ended_at, model,
                 input_tokens, output_tokens, cost_usd, final_text, event_count,
-                tool_errors, run_dir)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                tool_errors, run_dir, agent)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id,
                 start.get("task"),
@@ -132,6 +133,7 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
                 len(events),
                 tool_errors,
                 str(run_dir),
+                start.get("agent"),
             ),
         )
     con.close()
@@ -190,6 +192,62 @@ def add_finding(
                 (verdict, json.dumps(labels), run_id),
             )
     con.close()
+
+
+def costs_summary(db_path: Path | str, anomaly_factor: float = 2.0) -> dict:
+    """Cost aggregates per task, per agent, and per day, with anomaly flags
+    (runs costing more than anomaly_factor × their task's median)."""
+    import statistics
+    from datetime import datetime, timezone
+
+    runs = [r for r in list_runs(db_path) if r["cost_usd"] is not None]
+
+    def _group(key_fn):
+        groups: dict[str, list[dict]] = {}
+        for run in runs:
+            groups.setdefault(key_fn(run) or "—", []).append(run)
+        return [
+            {
+                "key": key,
+                "runs": len(group),
+                "total_usd": sum(r["cost_usd"] for r in group),
+                "mean_usd": sum(r["cost_usd"] for r in group) / len(group),
+            }
+            for key, group in sorted(groups.items())
+        ]
+
+    def _day(run):
+        ts = run["started_at"]
+        return (
+            datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d") if ts else None
+        )
+
+    anomalies = []
+    by_task: dict[str, list[dict]] = {}
+    for run in runs:
+        by_task.setdefault(run["task"] or "—", []).append(run)
+    for task, group in by_task.items():
+        median = statistics.median(r["cost_usd"] for r in group)
+        for run in group:
+            if median > 0 and run["cost_usd"] > anomaly_factor * median:
+                anomalies.append(
+                    {
+                        "run_id": run["run_id"],
+                        "task": task,
+                        "cost_usd": run["cost_usd"],
+                        "median_usd": median,
+                        "factor": run["cost_usd"] / median,
+                    }
+                )
+
+    return {
+        "total_usd": sum(r["cost_usd"] for r in runs),
+        "runs": len(runs),
+        "per_task": _group(lambda r: r["task"]),
+        "per_agent": _group(lambda r: r.get("agent")),
+        "per_day": _group(_day),
+        "anomalies": sorted(anomalies, key=lambda a: -a["factor"]),
+    }
 
 
 def get_findings(db_path: Path | str, run_id: str) -> list[dict]:

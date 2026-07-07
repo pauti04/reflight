@@ -39,12 +39,14 @@ def classify(events: list[dict], max_output_tokens: int = 20_000) -> list[Findin
     tool_calls = [e for e in events if e["type"] == "tool_call"]
     end = next((e for e in events if e["type"] == "run_end"), None)
 
-    # crash: the agent process raised
+    # crash: the agent process raised; governor kills get their own label so
+    # the dashboard shows the save, not a generic crash
     for event in events:
         if event["type"] == "error":
+            label = "governor_kill" if event["error_type"] == "GovernorKill" else "crash"
             findings.append(
                 Finding(
-                    "crash", FAIL, 1.0, event["seq"], f"{event['error_type']}: {event['message']}"
+                    label, FAIL, 1.0, event["seq"], f"{event['error_type']}: {event['message']}"
                 )
             )
 

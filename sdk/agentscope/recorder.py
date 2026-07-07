@@ -52,14 +52,19 @@ class Recorder:
         live_client: Any = None,
         tools: dict[str, ToolFn] | None = None,
         db_path: Path | str | None = None,
+        governor: Any = None,
+        agent_name: str | None = None,
     ):
         self.log = RunLog(run_dir)
         self._live = live_client
         self._tools = dict(tools or {})
         self._db_path = db_path
+        self._governor = governor
+        self.agent_name = agent_name
         self.messages = _SessionMessages(self)
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+        self.total_cost_usd = 0.0
         self._started = False
         self._ended = False
 
@@ -96,7 +101,15 @@ class Recorder:
     def start(self, task: str) -> None:
         if not self._started:
             self._started = True
-            self.log.emit("run_start", task=task)
+            if self.agent_name:
+                self.log.emit("run_start", task=task, agent=self.agent_name)
+            else:
+                self.log.emit("run_start", task=task)
+
+    def _kill(self, kill: BaseException) -> None:
+        """Record the governor's intervention, close the run, let the kill propagate."""
+        self.record_error(kill)
+        self.end(status="killed", final_text=None)
 
     def snapshot(self, label: str, state: Any) -> None:
         """Record a labeled snapshot of agent state (verified on replay)."""
@@ -130,12 +143,25 @@ class Recorder:
             raise RuntimeError(
                 "no live client: pass live_client= to Recorder or call session.wrap(...)"
             )
+        if self._governor is not None:
+            from .governor import GovernorKill
+
+            try:
+                self._governor.before_llm(self)
+            except GovernorKill as kill:
+                self._kill(kill)
+                raise
         request = to_jsonable(kwargs)
         response = self._live.messages.create(**kwargs)
         data = response.model_dump(mode="json")
         usage = data.get("usage") or {}
         self.total_input_tokens += usage.get("input_tokens") or 0
         self.total_output_tokens += usage.get("output_tokens") or 0
+        from .pricing import cost_usd
+
+        call_cost = cost_usd(data.get("model"), usage)
+        if call_cost is not None:
+            self.total_cost_usd += call_cost
         self.log.emit(
             "llm_call",
             request=request,
@@ -147,23 +173,40 @@ class Recorder:
     def _run_tool(
         self, name: str, tool_input: dict, tool_use_id: str
     ) -> tuple[str, bool, BaseException | None]:
-        fn = self._tools.get(name)
-        exc: BaseException | None = None
-        if fn is None:
-            result, is_error = f"UnknownTool: no tool named {name!r}", True
-        else:
+        input_hash = hash_payload(tool_input)
+        cached = None
+        if self._governor is not None:
+            from .governor import GovernorKill
+
             try:
-                result, is_error = fn(**tool_input), False
-            except Exception as e:  # tool failures are data to record, not crashes
-                exc, result, is_error = e, f"{type(e).__name__}: {e}", True
+                cached = self._governor.before_tool(name, input_hash)
+            except GovernorKill as kill:
+                self._kill(kill)
+                raise
+        exc: BaseException | None = None
+        from_cache = cached is not None
+        if from_cache:
+            result, is_error = cached
+        else:
+            fn = self._tools.get(name)
+            if fn is None:
+                result, is_error = f"UnknownTool: no tool named {name!r}", True
+            else:
+                try:
+                    result, is_error = fn(**tool_input), False
+                except Exception as e:  # tool failures are data to record, not crashes
+                    exc, result, is_error = e, f"{type(e).__name__}: {e}", True
+            if self._governor is not None:
+                self._governor.after_tool(name, input_hash, result, is_error)
         self.log.emit(
             "tool_call",
             name=name,
             input=to_jsonable(tool_input),
-            input_hash=hash_payload(tool_input),
+            input_hash=input_hash,
             tool_use_id=tool_use_id,
             result=result,
             is_error=is_error,
+            **({"cached": True} if from_cache else {}),
         )
         return result, is_error, exc
 

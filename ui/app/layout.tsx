@@ -27,6 +27,14 @@ export default function RootLayout({
           <span className="text-xs text-zinc-500">
             flight recorder for AI agents
           </span>
+          <nav className="ml-auto flex gap-4 text-sm">
+            <Link href="/" className="text-zinc-400 hover:text-zinc-100">
+              runs
+            </Link>
+            <Link href="/costs" className="text-zinc-400 hover:text-zinc-100">
+              costs
+            </Link>
+          </nav>
         </header>
         <main className="px-6 py-6">{children}</main>
       </body>
