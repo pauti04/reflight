@@ -20,20 +20,20 @@ from flaky_model import FlakyAnthropic
 from main import run_agent
 from tools import make_tools
 
-import agentscope
-from agentscope.testing import load_test, promote, run_test
+import reflight
+from reflight.testing import load_test, promote, run_test
 
 BUGGY_SEED, FIXED_SEED = 1, 0
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
 def main() -> int:
-    work = Path(tempfile.mkdtemp(prefix="agentscope-demo-"))
-    db = work / "agentscope.db"
+    work = Path(tempfile.mkdtemp(prefix="reflight-demo-"))
+    db = work / "reflight.db"
 
     print("── 1. the agent fails ─────────────────────────────────")
     run_dir = work / "nightly-run"
-    session = agentscope.record(run_dir, task=TASK, db_path=db)
+    session = reflight.record(run_dir, task=TASK, db_path=db)
     session.wrap(FlakyAnthropic(BUGGY_SEED))
     session._tools.update(make_tools(run_dir / "notes"))
     final_text, _ = run_agent(session, TASK)
@@ -41,7 +41,7 @@ def main() -> int:
 
     print("── 2. promote the failure to a test ──────────────────")
     test_path = promote(db, "nightly-run", tests_dir=work / "agent_tests")
-    print(f"   $ agentscope promote nightly-run\n   → {test_path.name}")
+    print(f"   $ reflight promote nightly-run\n   → {test_path.name}")
 
     test = load_test(test_path)  # "edit the assertions": state the right answer
     test["assertions"].append({"type": "final_text_contains", "value": "18,700,034"})

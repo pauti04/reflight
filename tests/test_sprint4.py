@@ -8,16 +8,16 @@ import main as example
 from flaky_model import FlakyAnthropic
 from tools import make_tools
 
-import agentscope
-from agentscope import ReplayDivergence, read_events, store
-from agentscope.judge import judge_run, render_transcript
+import reflight
+from reflight import ReplayDivergence, read_events, store
+from reflight.judge import judge_run, render_transcript
 
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
 def _record_flaky(tmp_path, seed, db_path=None):
     run_dir = tmp_path / f"flaky-{seed:02d}"
-    session = agentscope.record(run_dir, task=TASK, db_path=db_path)
+    session = reflight.record(run_dir, task=TASK, db_path=db_path)
     session.wrap(FlakyAnthropic(seed))
     session._tools.update(make_tools(run_dir / "notes"))
     example.run_agent(session, TASK)
@@ -32,7 +32,7 @@ def test_fork_fixes_a_failed_run(tmp_path):
     source = _record_flaky(tmp_path, 2, db_path=db)  # wrong_tool_args failure
 
     fork_dir = tmp_path / "fixed"
-    session = agentscope.fork(
+    session = reflight.fork(
         source,
         1,
         client=FlakyAnthropic(0),  # the fixed model
@@ -50,7 +50,7 @@ def test_fork_fixes_a_failed_run(tmp_path):
     assert runs["fixed"]["verdict"] == "pass"
 
     # the fork is a complete, self-contained recording — replay it
-    replay_session = agentscope.replay(fork_dir)
+    replay_session = reflight.replay(fork_dir)
     replayed_text, _ = example.run_agent(replay_session, replay_session.task)
     assert replayed_text == final_text
 
@@ -61,7 +61,7 @@ def test_fork_prefix_is_reused_not_recomputed(tmp_path):
 
     # fork after the first tool call: prefix (seq 0-2) replayed, rest live
     fork_dir = tmp_path / "fork3"
-    session = agentscope.fork(
+    session = reflight.fork(
         source,
         3,
         client=FlakyAnthropic(0),
@@ -78,7 +78,7 @@ def test_fork_prefix_is_reused_not_recomputed(tmp_path):
 
 def test_fork_detects_divergence_before_fork_point(tmp_path):
     source = _record_flaky(tmp_path, 0)
-    session = agentscope.fork(
+    session = reflight.fork(
         source,
         5,
         client=FlakyAnthropic(0),

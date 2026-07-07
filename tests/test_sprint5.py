@@ -4,16 +4,16 @@ import main as example
 from flaky_model import FlakyAnthropic
 from tools import make_tools
 
-import agentscope
-from agentscope.executor import run_repeated
-from agentscope.testing import check_assertions, load_test, promote, run_suite, run_test
+import reflight
+from reflight.executor import run_repeated
+from reflight.testing import check_assertions, load_test, promote, run_suite, run_test
 
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
 def _record(tmp_path, seed, run_id, db):
     run_dir = tmp_path / run_id
-    session = agentscope.record(run_dir, task=TASK, db_path=db)
+    session = reflight.record(run_dir, task=TASK, db_path=db)
     session.wrap(FlakyAnthropic(seed))
     session._tools.update(make_tools(run_dir / "notes"))
     example.run_agent(session, TASK)

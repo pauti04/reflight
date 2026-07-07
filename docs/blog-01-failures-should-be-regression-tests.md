@@ -1,6 +1,6 @@
 # Your agent's failures should be regression tests
 
-*Draft — blog post #1 for the AgentScope launch.*
+*Draft — blog post #1 for the Reflight launch.*
 
 At 2am your agent got stuck in a loop, called the same tool eleven times, and
 confidently told a user the answer was 42. By the time you look at the logs,
@@ -19,7 +19,7 @@ The fix is to stop treating the failure as an event and start treating it as
 
 ## Record everything, replay anything
 
-AgentScope wraps your agent's LLM client and tools (three added lines) and
+Reflight wraps your agent's LLM client and tools (three added lines) and
 records every request/response pair to an append-only event log. That log is
 enough to *re-execute your agent code deterministically*: replay serves every
 model response and tool result from the recording, byte-for-byte, offline, in
@@ -33,7 +33,7 @@ prompt changed, it raises a divergence error instead of lying.)
 ## One command: failure → test
 
 ```
-$ agentscope promote nightly-run
+$ reflight promote nightly-run
 promoted nightly-run → agent_tests/nightly-run.yaml
 ```
 
@@ -69,7 +69,7 @@ once the agent — code or model — is actually fixed.
 
 One run tells you an agent *can* do a task. N runs tell you whether it
 *reliably does* — and reliability, not capability, is what's been flat across
-two years of model releases. AgentScope's executor runs a task N times
+two years of model releases. Reflight's executor runs a task N times
 concurrently under a hard cost cap and scores consistency:
 
 ```
@@ -95,11 +95,10 @@ and reliability becomes a number your CI refuses to let shrink.**
 
 ## Try it
 
-AgentScope is open source (Apache-2.0): record with 3 lines, replay any run
+Reflight is open source (Apache-2.0): record with 3 lines, replay any run
 step-by-step in a timeline UI, promote failures with one command, gate CI on
 consistency. *(links, install, demo video)*
 
 ---
 *Notes for final edit: add real install instructions once published; link the
-timeline-UI screenshots and the fork-mode post (#2); rename pending — working
-title collides with Alibaba's AgentScope.*
+timeline-UI screenshots and the fork-mode post (#2).*

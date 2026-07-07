@@ -4,8 +4,8 @@ import socket
 
 import pytest
 
-import agentscope
-from agentscope import ReplayDivergence, read_events
+import reflight
+from reflight import ReplayDivergence, read_events
 
 TASK = "Summarize the plot of Hamlet in one sentence."
 ANSWER = "A Danish prince avenges his father and nearly everyone dies."
@@ -77,7 +77,7 @@ def no_network(monkeypatch):
 def test_openai_record_and_replay(tmp_path, no_network):
     run_dir = tmp_path / "run"
 
-    session = agentscope.record(run_dir, task=TASK)
+    session = reflight.record(run_dir, task=TASK)
     client = session.wrap_openai(FakeOpenAI())
     recorded = _openai_agent(client, TASK)
     session.end(final_text=recorded)
@@ -89,7 +89,7 @@ def test_openai_record_and_replay(tmp_path, no_network):
     end = next(e for e in events if e["type"] == "run_end")
     assert end["input_tokens"] == 25 and end["output_tokens"] == 15
 
-    session = agentscope.replay(run_dir)
+    session = reflight.replay(run_dir)
     client = session.wrap_openai()
     replayed = _openai_agent(client, TASK)
     assert replayed == recorded
@@ -97,19 +97,19 @@ def test_openai_record_and_replay(tmp_path, no_network):
 
 def test_openai_replay_detects_divergence(tmp_path):
     run_dir = tmp_path / "run"
-    session = agentscope.record(run_dir, task=TASK)
+    session = reflight.record(run_dir, task=TASK)
     client = session.wrap_openai(FakeOpenAI())
     _openai_agent(client, TASK)
     session.end()
 
-    session = agentscope.replay(run_dir)
+    session = reflight.replay(run_dir)
     client = session.wrap_openai()
     with pytest.raises(ReplayDivergence):
         _openai_agent(client, "A different prompt entirely")
 
 
 def test_attrview_supports_openai_access_patterns(tmp_path):
-    from agentscope.replayer import AttrView
+    from reflight.replayer import AttrView
 
     view = AttrView({"choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}]})
     assert view.choices[0].message.content == "hi"

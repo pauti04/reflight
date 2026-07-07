@@ -1,4 +1,4 @@
-# AgentScope — Sprint Plan
+# Reflight — Sprint Plan
 
 2-week sprints, ~16 focused hours each (per the ~8 hrs/week cadence in
 [GAMEPLAN.md](GAMEPLAN.md)). Every sprint ends with a **demo artifact** — a runnable
@@ -37,7 +37,7 @@ with networking off, in <2s, at $0.00.
 - [x] Event schema v1 (typed + versioned): `run_start`, `llm_call`, `tool_call`, `state_snapshot`, `error`, `run_end`
 - [x] Auto-instrumentation: wrap the Anthropic client — **≤3 lines to instrument an existing agent**
 - [x] SQLite store; token + dollar cost computed per event at ingest
-- [x] `agentscope runs` / `agentscope show <run_id>` CLI
+- [x] `reflight runs` / `reflight show <run_id>` CLI
 - [x] Unit tests for recorder/replayer against schema v1
 
 **Done when:** a fresh agent project can `pip install`, add 3 lines, and get recorded runs in SQLite.
@@ -47,7 +47,7 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the flight-recorder experience. End of Phase 1.
 
-- [x] FastAPI query endpoints (runs list, run detail, event payloads) — `agentscope serve`
+- [x] FastAPI query endpoints (runs list, run detail, event payloads) — `reflight serve`
 - [x] Next.js UI: runs list → run timeline → event inspector (prompt/response/tool args/cost)
 - [x] Replay step-through wired into the UI (keyboard ↑/↓ stepper; live fork/replay from UI comes with Phase 2 fork mode) — CLI `replay --step` remains
 - [x] Failed events visually flagged on the timeline
@@ -61,7 +61,7 @@ with networking off, in <2s, at $0.00.
 
 - [x] Rule classifiers: loop (repeated near-identical calls), wrong tool args (schema validation), token/cost blowout, tool-error cascade (+ crash, runaway)
 - [x] Failure tags + confidence surfaced in timeline UI and CLI
-- [x] Run-diff view: two runs of one task side-by-side, first divergence highlighted (`agentscope diff` + /diff page)
+- [x] Run-diff view: two runs of one task side-by-side, first divergence highlighted (`reflight diff` + /diff page)
 - [x] Flaky example agent with 3 seeded failure modes (becomes the eternal demo fixture)
 
 **Done when:** 10 runs of the flaky agent → dashboard shows pass/fail with each failure auto-labeled correctly.
@@ -71,7 +71,7 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** finish Phase 2's fuzzy half.
 
-- [x] LLM-judge classifier for failures rules can't catch (bad reasoning, wrong answer) — `agentscope judge`, injectable client
+- [x] LLM-judge classifier for failures rules can't catch (bad reasoning, wrong answer) — `reflight judge`, injectable client
 - [x] Fork mode: replay to step N, go live from there (test a fix mid-run) — forks are complete runs, diffable vs the original
 - [ ] Judge accuracy sanity check against ~20 hand-labeled runs (needs real API credentials — parked with the Sprint 0 close-out)
 
@@ -82,7 +82,7 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the killer feature. Failures become regression tests.
 
-- [x] **`agentscope promote <run_id>`** — converts a recorded run into a replayable test case with auto-generated assertions (editable)
+- [x] **`reflight promote <run_id>`** — converts a recorded run into a replayable test case with auto-generated assertions (editable)
 - [x] Task spec format: input, assertions, optional LLM-judge rubric (YAML, commented)
 - [x] Test runner: replay-mode execution of promoted tests (fast, free, offline; replay failures re-verified live so model-side fixes are caught)
 - [x] N-run live executor with concurrency + hard cost cap
@@ -109,7 +109,7 @@ with networking off, in <2s, at $0.00.
 - [x] Per-run / per-agent budgets (tokens + dollars + llm-call count), hard enforcement with recorded kill reason (error event + status "killed" + governor_kill label)
 - [x] Loop circuit breaker (detection already exists from Sprint 3 — now it *acts*)
 - [x] Identical-tool-call cache with hit-rate stats (cached calls still recorded, flagged `cached`)
-- [x] Cost dashboard: per task / per agent / per day, anomaly flags (`agentscope costs`, /api/costs, /costs page)
+- [x] Cost dashboard: per task / per agent / per day, anomaly flags (`reflight costs`, /api/costs, /costs page)
 
 **Done when:** a runaway agent is killed at a $0.50 budget and the dashboard shows the save.
 **Demo artifact:** 🎬 **Milestone demo #4** — the kill, on the timeline.

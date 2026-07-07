@@ -14,7 +14,7 @@ import main as example
 from fake_model import FakeAnthropic
 from tools import make_tools
 
-from agentscope import Recorder, Replayer, ReplayDivergence
+from reflight import Recorder, Replayer, ReplayDivergence
 
 RESEARCH_TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 FAILURE_TASK = "What is 12 divided by 0? Use the calculator."
@@ -52,7 +52,7 @@ def test_replay_is_deterministic_with_network_blocked(tmp_path, task, no_network
 
 def test_failure_run_records_the_tool_error(tmp_path):
     run_dir, _, _ = _record(tmp_path, FAILURE_TASK)
-    from agentscope import read_events
+    from reflight import read_events
 
     errors = [e for e in read_events(run_dir) if e["type"] == "tool_call" and e["is_error"]]
     assert len(errors) == 1

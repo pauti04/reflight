@@ -1,4 +1,4 @@
-"""FastAPI query server for the timeline UI: `agentscope serve`.
+"""FastAPI query server for the timeline UI: `reflight serve`.
 
 Read-only REST over the SQLite store. The Next.js dev UI (ui/) talks to this
 on localhost; in a later phase the built UI gets served from here too.
@@ -16,8 +16,8 @@ from . import store
 DEFAULT_PORT = 8724  # "ASCP" on a phone keypad, near enough
 
 
-def create_app(db_path: str | Path = "runs/agentscope.db") -> FastAPI:
-    app = FastAPI(title="AgentScope", version="0.1")
+def create_app(db_path: str | Path = "runs/reflight.db") -> FastAPI:
+    app = FastAPI(title="Reflight", version="0.1")
     app.add_middleware(
         CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
     )

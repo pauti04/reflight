@@ -16,18 +16,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "research_agent"))
 
-import agentscope
+import reflight
 from fake_model import FakeAnthropic
 from tools import TOOL_SPECS, make_tools
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUN_DIR = REPO_ROOT / "runs" / "quickstart-demo"
-DB = REPO_ROOT / "runs" / "agentscope.db"
+DB = REPO_ROOT / "runs" / "reflight.db"
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
 def run_agent(client, tools) -> str:
-    """A plain agent loop — knows nothing about agentscope."""
+    """A plain agent loop — knows nothing about reflight."""
     messages: list[dict] = [{"role": "user", "content": TASK}]
     for _ in range(8):
         response = client.messages.create(
@@ -61,10 +61,10 @@ def main() -> int:
     mode = sys.argv[1] if len(sys.argv) > 1 else "record"
 
     if mode == "record":
-        session = agentscope.record(RUN_DIR, task=TASK, db_path=DB)      # (1)
+        session = reflight.record(RUN_DIR, task=TASK, db_path=DB)      # (1)
         client = session.wrap(FakeAnthropic())                           # (2)
     else:
-        session = agentscope.replay(RUN_DIR)
+        session = reflight.replay(RUN_DIR)
         client = session.wrap()
 
     raw_tools = make_tools(RUN_DIR / "notes")

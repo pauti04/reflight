@@ -1,4 +1,4 @@
-# AgentScope — Game Plan
+# Reflight — Game Plan
 
 Companion to [PROJECT_PLAN.md](PROJECT_PLAN.md) (*what and why*) and
 [SPRINTS.md](SPRINTS.md) (*the sprint-by-sprint execution schedule — the doc to
@@ -88,7 +88,7 @@ without replay** (still valuable, weaker demo) and reassess.
 
 ## Phase 3 — Reliability Harness (Weeks 9–12)
 
-- [ ] **`agentscope promote <run_id>` — one command turns any recorded failed run
+- [ ] **`reflight promote <run_id>` — one command turns any recorded failed run
       into a replayable regression test.** This is the killer feature; build it first.
 - [ ] Task spec format: input, assertions, optional LLM-judge rubric
 - [ ] N-run executor with concurrency + cost cap

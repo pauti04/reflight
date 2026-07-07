@@ -1,11 +1,11 @@
-"""AgentScope — flight recorder for AI agents.
+"""Reflight — flight recorder for AI agents.
 
 Record an agent run (every LLM call and tool call), replay it
 deterministically, and query recorded runs by cost, status, and failure mode.
 
 Quickstart — instrument an existing agent in 3 added lines:
 
-    session = agentscope.record("runs/my-run", db_path="runs/agentscope.db")  # 1
+    session = reflight.record("runs/my-run", db_path="runs/reflight.db")  # 1
     client = session.wrap(anthropic.Anthropic())                              # 2
     my_tool = session.tool(my_tool)                                           # 3 (or @session.tool)
 """

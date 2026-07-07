@@ -4,7 +4,7 @@ import main as example
 from flaky_model import FlakyAnthropic
 from tools import make_tools
 
-from agentscope.reliability import (
+from reflight.reliability import (
     ConsistencyReport,
     compare,
     load_baseline,

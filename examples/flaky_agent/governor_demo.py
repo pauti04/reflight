@@ -22,12 +22,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "research_agent"))
 from anthropic.types import Message
 from tools import TOOL_SPECS, make_tools
 
-import agentscope
-from agentscope import Governor, GovernorKill, store
+import reflight
+from reflight import Governor, GovernorKill, store
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = REPO_ROOT / "runs"
-DB = RUNS_DIR / "agentscope.db"
+DB = RUNS_DIR / "reflight.db"
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
@@ -82,7 +82,7 @@ def runaway_agent(session, task: str) -> None:
 
 def _run(run_id: str, governor: Governor) -> None:
     run_dir = RUNS_DIR / run_id
-    session = agentscope.record(
+    session = reflight.record(
         run_dir,
         task=TASK,
         client=RunawayAnthropic(),

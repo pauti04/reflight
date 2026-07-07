@@ -44,7 +44,7 @@ the stored verdict.
 
 ## Tests: replay-first economics
 
-`agentscope promote <run_id>` writes a YAML test: the recording + assertions.
+`reflight promote <run_id>` writes a YAML test: the recording + assertions.
 The runner replays it (free). Three outcomes:
 
 - replay **passes** → done, $0.00

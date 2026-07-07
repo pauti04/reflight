@@ -6,7 +6,7 @@ a scripted model.
 ## 1. Install
 
 ```bash
-git clone <repo> && cd agentscope
+git clone <repo> && cd reflight
 uv sync              # Python 3.12+; uv manages the toolchain
 ```
 
@@ -39,25 +39,25 @@ uv run python examples/research_agent/main.py verify first-failure
 ## 4. Query and browse
 
 ```bash
-uv run agentscope import runs      # ingest into runs/agentscope.db
-uv run agentscope runs             # verdicts, labels, costs
-uv run agentscope show first-failure
-uv run agentscope costs            # the money view
+uv run reflight import runs      # ingest into runs/reflight.db
+uv run reflight runs             # verdicts, labels, costs
+uv run reflight show first-failure
+uv run reflight costs            # the money view
 ```
 
 For the timeline UI:
 
 ```bash
-uv run agentscope serve                 # API on :8724
+uv run reflight serve                 # API on :8724
 cd ui && npm install && npm run dev     # UI on :3000
 ```
 
 ## 5. Instrument your own agent
 
 ```python
-import agentscope, anthropic
+import reflight, anthropic
 
-session = agentscope.record("runs/my-run", task=task, db_path="runs/agentscope.db")
+session = reflight.record("runs/my-run", task=task, db_path="runs/reflight.db")
 client = session.wrap(anthropic.Anthropic())   # or session.wrap_openai(OpenAI())
 tool = session.tool(tool)                      # per tool function
 

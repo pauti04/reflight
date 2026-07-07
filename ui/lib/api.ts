@@ -1,5 +1,5 @@
 export const API =
-  process.env.NEXT_PUBLIC_AGENTSCOPE_API ?? "http://127.0.0.1:8724";
+  process.env.NEXT_PUBLIC_REFLIGHT_API ?? "http://127.0.0.1:8724";
 
 export type Finding = {
   seq: number;

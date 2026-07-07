@@ -33,7 +33,7 @@ export default function RunsPage() {
       <div className="text-zinc-400">
         <p className="text-red-400 font-mono mb-2">cannot reach the API</p>
         <p>
-          Start it with <code className="text-zinc-200">agentscope serve</code>{" "}
+          Start it with <code className="text-zinc-200">reflight serve</code>{" "}
           (expected at <code className="text-zinc-200">{API}</code>)
         </p>
       </div>
@@ -43,7 +43,7 @@ export default function RunsPage() {
     return (
       <p className="text-zinc-400">
         No runs recorded yet — record one, then{" "}
-        <code className="text-zinc-200">agentscope import</code>.
+        <code className="text-zinc-200">reflight import</code>.
       </p>
     );
 

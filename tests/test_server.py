@@ -6,8 +6,8 @@ import main as example
 from fake_model import FakeAnthropic
 from tools import make_tools
 
-from agentscope import Recorder
-from agentscope.server import create_app
+from reflight import Recorder
+from reflight.server import create_app
 
 TASK = "What is 12 divided by 0? Use the calculator."
 

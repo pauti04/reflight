@@ -8,9 +8,9 @@ import main as example
 from fake_model import FakeAnthropic
 from tools import TOOL_SPECS, make_tools
 
-import agentscope
-from agentscope import Recorder, read_events
-from agentscope import pricing, schema, store
+import reflight
+from reflight import Recorder, read_events
+from reflight import pricing, schema, store
 
 RESEARCH_TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 FAILURE_TASK = "What is 12 divided by 0? Use the calculator."
@@ -134,14 +134,14 @@ def _plain_agent(client, tools, task):
 def test_wrapped_agent_records_and_replays(tmp_path, task, no_network):
     run_dir = tmp_path / "run"
 
-    session = agentscope.record(run_dir, task=task)
+    session = reflight.record(run_dir, task=task)
     client = session.wrap(FakeAnthropic())
     tools = {n: session.tool(f) for n, f in make_tools(run_dir / "notes").items()}
     recorded = _plain_agent(client, tools, task)
     session.end(final_text=recorded)
     assert recorded
 
-    session = agentscope.replay(run_dir)
+    session = reflight.replay(run_dir)
     client = session.wrap()
     tools = {n: session.tool(f) for n, f in make_tools(run_dir / "notes").items()}
     replayed = _plain_agent(client, tools, task)
@@ -152,7 +152,7 @@ def test_recording_context_manager_captures_crash(tmp_path):
     db = tmp_path / "test.db"
     run_dir = tmp_path / "run"
     with pytest.raises(RuntimeError, match="agent exploded"):
-        with agentscope.recording(run_dir, task="doomed", db_path=db):
+        with reflight.recording(run_dir, task="doomed", db_path=db):
             raise RuntimeError("agent exploded")
 
     events = read_events(run_dir)

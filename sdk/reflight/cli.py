@@ -1,8 +1,8 @@
-"""The `agentscope` command: query recorded runs.
+"""The `reflight` command: query recorded runs.
 
-    agentscope import [RUNS_DIR]     ingest run directories into the DB
-    agentscope runs                  list runs (status, model, tokens, cost)
-    agentscope show RUN_ID           event timeline for one run
+    reflight import [RUNS_DIR]     ingest run directories into the DB
+    reflight runs                  list runs (status, model, tokens, cost)
+    reflight show RUN_ID           event timeline for one run
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ _VERDICT_ICON = {"pass": "✓", "warn": "~", "fail": "✗"}
 def cmd_runs(args: argparse.Namespace) -> int:
     runs = store.list_runs(args.db)
     if not runs:
-        print(f"no runs in {args.db} (try: agentscope import)")
+        print(f"no runs in {args.db} (try: reflight import)")
         return 0
     for run in runs:
         labels = ",".join(json.loads(run["labels"] or "[]"))
@@ -107,7 +107,7 @@ def cmd_diff(args: argparse.Namespace) -> int:
     events_a = [e for e, _ in store.get_events(args.db, args.run_a)]
     events_b = [e for e, _ in store.get_events(args.db, args.run_b)]
     if not events_a or not events_b:
-        print("both runs must exist in the db (agentscope import)")
+        print("both runs must exist in the db (reflight import)")
         return 1
 
     result = diff_runs(events_a, events_b)
@@ -166,7 +166,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
     path = promote(args.db, args.run_id, args.tests_dir)
     print(f"promoted {args.run_id} → {path}")
     print("edit the assertions to state what SHOULD happen, then run your suite")
-    print("(agentscope.testing.run_suite — see examples/flaky_agent/regression_demo.py)")
+    print("(reflight.testing.run_suite — see examples/flaky_agent/regression_demo.py)")
     return 0
 
 
@@ -201,14 +201,14 @@ def cmd_judge(args: argparse.Namespace) -> int:
 def cmd_serve(args: argparse.Namespace) -> int:
     from .server import serve
 
-    print(f"AgentScope API on http://{args.host}:{args.port}  (db: {args.db})")
+    print(f"Reflight API on http://{args.host}:{args.port}  (db: {args.db})")
     serve(args.db, host=args.host, port=args.port)
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="agentscope", description=__doc__)
-    parser.add_argument("--db", default="runs/agentscope.db", help="database path")
+    parser = argparse.ArgumentParser(prog="reflight", description=__doc__)
+    parser.add_argument("--db", default="runs/reflight.db", help="database path")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_import = sub.add_parser("import", help="ingest run directories")

@@ -1,18 +1,15 @@
-# ⏺ AgentScope
+# ⏺ Reflight
 
 **Flight recorder for AI agents: record every run, replay it deterministically,
 turn failures into regression tests.**
 
-> Working name — rename pending before public launch (collides with Alibaba's
-> AgentScope framework).
-
 Agents are programs whose most important steps are non-deterministic and
 external. When one fails, the failure evaporates — re-running gives you a
-*different* run. AgentScope makes agent failures **reproducible**, and builds
+*different* run. Reflight makes agent failures **reproducible**, and builds
 the whole reliability loop on top:
 
 > agent fails → the recorded run is already a reproducible test case →
-> `agentscope promote <run_id>` adds it to your suite → CI replays it forever,
+> `reflight promote <run_id>` adds it to your suite → CI replays it forever,
 > so that failure can never silently come back.
 
 ## What you get
@@ -31,7 +28,7 @@ the whole reliability loop on top:
 ## Quickstart
 
 ```bash
-git clone <repo> && cd agentscope
+git clone <repo> && cd reflight
 uv sync                      # installs the SDK + CLI (Python 3.12+)
 
 # record two demo runs (scripted model — no API key needed)
@@ -45,15 +42,15 @@ uv run python examples/research_agent/main.py record \
 uv run python examples/research_agent/main.py replay demo-failure --step
 
 # query them
-uv run agentscope import runs
-uv run agentscope runs
-uv run agentscope show demo-failure
+uv run reflight import runs
+uv run reflight runs
+uv run reflight show demo-failure
 ```
 
 ### The timeline UI
 
 ```bash
-uv run agentscope serve            # API on :8724
+uv run reflight serve            # API on :8724
 cd ui && npm install && npm run dev   # UI on :3000
 ```
 
@@ -63,9 +60,9 @@ banner on failed runs; pick two runs to diff; `/costs` for the money view.
 ### Instrument your own agent — 3 lines
 
 ```python
-import agentscope
+import reflight
 
-session = agentscope.record("runs/my-run", task=task, db_path="runs/agentscope.db")  # 1
+session = reflight.record("runs/my-run", task=task, db_path="runs/reflight.db")  # 1
 client = session.wrap(anthropic.Anthropic())                                          # 2
 my_tool = session.tool(my_tool)                        # 3 — or @session.tool
 
@@ -78,18 +75,18 @@ OpenAI-compatible clients: `client = session.wrap_openai(OpenAI())`.
 Replay it later — same agent code, session swapped:
 
 ```python
-session = agentscope.replay("runs/my-run")     # no network, no key, no cost
+session = reflight.replay("runs/my-run")     # no network, no key, no cost
 client = session.wrap()
 ```
 
 ### Every failure becomes a regression test
 
 ```bash
-uv run agentscope promote my-failed-run       # → agent_tests/my-failed-run.yaml
+uv run reflight promote my-failed-run       # → agent_tests/my-failed-run.yaml
 ```
 
 Edit the assertions to state what SHOULD happen, then run the suite from your
-test code (`agentscope.testing.run_suite`). Replay-first economics: passing
+test code (`reflight.testing.run_suite`). Replay-first economics: passing
 tests cost $0.00; replay failures are re-verified live; code changes trigger a
 live re-run. See the full loop in
 [examples/flaky_agent/regression_demo.py](examples/flaky_agent/regression_demo.py)
@@ -98,9 +95,9 @@ and the CI gate in [examples/flaky_agent/ci_gate.py](examples/flaky_agent/ci_gat
 ### The governor
 
 ```python
-from agentscope import Governor
+from reflight import Governor
 
-session = agentscope.record(..., governor=Governor(
+session = reflight.record(..., governor=Governor(
     max_cost_usd=0.50,       # hard kill at the cap — reason recorded in the run
     loop_breaker=3,          # N identical consecutive tool calls allowed
     cache_tool_calls=True,   # serve repeats from cache (still recorded)
@@ -132,7 +129,7 @@ content, parallel tool calls) are tracked in [NOTES.md](NOTES.md).
 ## Layout
 
 ```
-sdk/agentscope/    the library: recorder, replayer, fork, classify, judge,
+sdk/reflight/    the library: recorder, replayer, fork, classify, judge,
                    testing (promote/runner), executor, reliability, governor,
                    store (SQLite), server (FastAPI), cli
 ui/                Next.js timeline UI

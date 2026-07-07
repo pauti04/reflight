@@ -19,7 +19,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from agentscope import Recorder, Replayer, read_events
+from reflight import Recorder, Replayer, read_events
 
 from fake_model import FakeAnthropic
 from tools import TOOL_SPECS, make_tools
@@ -84,7 +84,7 @@ def cmd_record(args: argparse.Namespace) -> int:
     run_id = args.run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = RUNS_DIR / run_id
     session = Recorder(
-        run_dir, live, make_tools(run_dir / "notes"), db_path=RUNS_DIR / "agentscope.db"
+        run_dir, live, make_tools(run_dir / "notes"), db_path=RUNS_DIR / "reflight.db"
     )
 
     t0 = time.perf_counter()

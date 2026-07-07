@@ -30,9 +30,9 @@ from flaky_model import FlakyAnthropic
 from main import run_agent
 from tools import make_tools
 
-import agentscope
-from agentscope.reliability import compare, load_baseline, measure, render, save_baseline
-from agentscope.testing import load_test, promote, run_test
+import reflight
+from reflight.reliability import compare, load_baseline, measure, render, save_baseline
+from reflight.testing import load_test, promote, run_test
 
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 BASELINE = Path(__file__).parent / "baseline.json"
@@ -47,7 +47,7 @@ def _suite_check(work: Path, offset: int):
     """Record a run with the current model, promote it, expect the golden answer."""
     db = work / "gate.db"
     run_dir = work / "golden-run"
-    session = agentscope.record(run_dir, task=TASK, db_path=db)
+    session = reflight.record(run_dir, task=TASK, db_path=db)
     session.wrap(FlakyAnthropic(0 + offset))
     session._tools.update(make_tools(run_dir / "notes"))
     run_agent(session, TASK)
@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     offset = 1 if args.degrade else 0
-    work = Path(tempfile.mkdtemp(prefix="agentscope-gate-"))
+    work = Path(tempfile.mkdtemp(prefix="reflight-gate-"))
 
     report = measure(
         _agent,

@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "agentscope"
+name = "reflight"
 version = "0.1.0.dev0"
 source = { editable = "." }
 dependencies = [

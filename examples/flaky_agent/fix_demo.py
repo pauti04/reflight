@@ -18,13 +18,13 @@ from flaky_model import FlakyAnthropic
 from main import run_agent
 from tools import make_tools
 
-import agentscope
-from agentscope import store
-from agentscope.diff import diff_runs
+import reflight
+from reflight import store
+from reflight.diff import diff_runs
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = REPO_ROOT / "runs"
-DB = RUNS_DIR / "agentscope.db"
+DB = RUNS_DIR / "reflight.db"
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 SOURCE = RUNS_DIR / "flaky-02"
@@ -33,12 +33,12 @@ FORK_AT = 1  # the seq of the llm_call that chose the wrong arguments
 
 def main() -> int:
     if not (SOURCE / "events.jsonl").exists():
-        session = agentscope.record(SOURCE, task=TASK, db_path=DB)
+        session = reflight.record(SOURCE, task=TASK, db_path=DB)
         session.wrap(FlakyAnthropic(2))
         run_agent(session, TASK)
 
     fork_dir = RUNS_DIR / "flaky-02-fixed"
-    session = agentscope.fork(
+    session = reflight.fork(
         SOURCE,
         FORK_AT,
         client=FlakyAnthropic(0),  # the "fixed" model

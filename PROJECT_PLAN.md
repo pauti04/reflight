@@ -1,4 +1,4 @@
-# AgentScope — Flight Recorder, Reliability Harness & Cost Governor for AI Agents
+# Reflight — Flight Recorder, Reliability Harness & Cost Governor for AI Agents
 
 *(working name — alternatives: BlackBox, Replay, TraceKit)*
 

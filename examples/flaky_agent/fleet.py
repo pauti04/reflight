@@ -18,11 +18,11 @@ from flaky_model import FlakyAnthropic
 from main import run_agent  # the research agent's loop, reused verbatim
 from tools import make_tools
 
-from agentscope import Recorder, store
+from reflight import Recorder, store
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = REPO_ROOT / "runs"
-DB = RUNS_DIR / "agentscope.db"
+DB = RUNS_DIR / "reflight.db"
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 

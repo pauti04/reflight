@@ -4,9 +4,9 @@ import main as example
 from flaky_model import FlakyAnthropic
 from tools import make_tools
 
-from agentscope import Recorder, read_events, store
-from agentscope.classify import classify, verdict
-from agentscope.diff import diff_runs
+from reflight import Recorder, read_events, store
+from reflight.classify import classify, verdict
+from reflight.diff import diff_runs
 
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 

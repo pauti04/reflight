@@ -54,6 +54,9 @@ project works.
 
 ## Naming
 
-⚠ "AgentScope" collides with Alibaba's established multi-agent framework
-(agentscope on PyPI/GitHub). Fine as a local working name; **must rename before
-any public launch** (Sprint 8 at the latest). Candidates: keep a shortlist here.
+✔ RESOLVED (2026-07-07): renamed **AgentScope → Reflight**. The original
+working name collided with Alibaba's multi-agent framework. "Reflight" chosen
+from a vetted shortlist: PyPI `reflight` free at decision time (register on
+first publish!), no meaningful brand collisions found, aviation-native
+metaphor (re-fly the flight), works as a verb. Runner-up: AgentVCR.
+Recorded runs in runs/ were deliberately NOT rewritten (byte-exact replay).

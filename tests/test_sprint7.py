@@ -6,16 +6,16 @@ import main as example
 from flaky_model import FlakyAnthropic
 from tools import make_tools
 
-import agentscope
-from agentscope import Governor, GovernorKill, read_events, store
-from agentscope.classify import classify
+import reflight
+from reflight import Governor, GovernorKill, read_events, store
+from reflight.classify import classify
 
 TASK = "What is the population of Tokyo, and what is that number divided by 2?"
 
 
 def _session(tmp_path, seed, governor, db=None, agent_name=None):
     run_dir = tmp_path / "run"
-    return agentscope.record(
+    return reflight.record(
         run_dir,
         task=TASK,
         client=FlakyAnthropic(seed),
@@ -77,7 +77,7 @@ def test_tool_cache_serves_repeats_without_execution(tmp_path):
 
     governor = Governor(cache_tool_calls=True)
     run_dir = tmp_path / "run"
-    session = agentscope.record(
+    session = reflight.record(
         run_dir,
         task=TASK,
         client=FlakyAnthropic(1),  # loop: same calculator call 5×
@@ -100,8 +100,8 @@ def test_governed_run_replays_deterministically(tmp_path):
 
     # the killed run replays: same prefix, and the replayer stops where the
     # recording stops (exhausted = divergence, which is honest)
-    replay = agentscope.replay(run_dir)
-    with pytest.raises(agentscope.ReplayDivergence, match="exhausted"):
+    replay = reflight.replay(run_dir)
+    with pytest.raises(reflight.ReplayDivergence, match="exhausted"):
         example.run_agent(replay, replay.task)
     # 4 llm calls + 3 tool calls replayed — the kill landed on the 4th tool attempt
     assert len(replay.replay_log) == 7
@@ -111,7 +111,7 @@ def test_costs_summary_and_anomalies(tmp_path):
     db = tmp_path / "db"
     for seed in range(4):  # seeds 0,3 pass (~$0.0042); 1 loop ($0.0063); 2 errors
         run_dir = tmp_path / f"r{seed}"
-        session = agentscope.record(
+        session = reflight.record(
             run_dir,
             task=TASK,
             client=FlakyAnthropic(seed),

@@ -12,7 +12,7 @@ services:
     build:
       context: ./ui
       args:
-        NEXT_PUBLIC_AGENTSCOPE_API: http://localhost:8724
+        NEXT_PUBLIC_REFLIGHT_API: http://localhost:8724
     ports:
       - "3000:3000"
     depends_on:
