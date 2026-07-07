@@ -82,6 +82,19 @@ session.end(final_text=answer)
 
 OpenAI-compatible clients: `client = session.wrap_openai(OpenAI())`.
 
+**LangGraph / LangChain** agents instrument without code changes:
+
+```python
+from reflight.adapters.langchain import instrument
+
+model, tools = instrument(session, ChatOpenAI(model="gpt-4o-mini"), tools)
+agent = create_react_agent(model, tools)   # unchanged LangGraph code
+```
+
+Validated against the real thing: [examples/langgraph_live.py](examples/langgraph_live.py)
+records a live LangGraph run and replays it byte-identically offline.
+(Sync paths; coroutine-only tools rejected loudly.)
+
 Replay it later — same agent code, session swapped:
 
 ```python

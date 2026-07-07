@@ -34,6 +34,9 @@
 - **SDK version drift** — recordings store `model_dump()` output; replaying
   under a different anthropic SDK version could change validation/dump shape.
   Mitigation later: store SDK version in run_start, warn on mismatch.
+- **Async paths** — sync only across the board (sessions, adapters). The
+  LangChain adapter injects the sync client and rejects coroutine-only tools
+  loudly; async client injection is a known open item.
 - **Retries** — SDK-level automatic retries would record duplicate-ish calls.
   Not encountered yet; revisit when using the live API under load.
 

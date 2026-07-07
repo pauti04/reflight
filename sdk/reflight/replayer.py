@@ -105,6 +105,12 @@ class _ReplayOpenAICompletions:
     def create(self, **kwargs: Any):
         return self._session._openai_create(**kwargs)
 
+    @property
+    def with_raw_response(self):
+        from .recorder import _RawResponseShim
+
+        return _RawResponseShim(self)
+
 
 class _WrappedOpenAIClient:
     def __init__(self, session: "Replayer"):

@@ -152,7 +152,7 @@ Priority order set by the pre-launch assessment; reorder on real user feedback.
 - [x] pytest plugin: promoted YAML tests collect + run in a normal `pytest` invocation
       (pytest11 entry point; ini config via dotted paths; replay-first; readable failures;
       inert when unconfigured)
-- [ ] Framework adapters: LangGraph / CrewAI / Claude Agent SDK auto-instrumentation
+- [x] LangChain/LangGraph adapter: `reflight.adapters.langchain.instrument(session, model, tools)` — client injection under ChatOpenAI + tool wrapping; validated live against real gpt-4o-mini + create_react_agent (examples/langgraph_live.py). CrewAI / Claude Agent SDK adapters still open.
 - [x] Streaming replay: `messages.stream()` helper pattern — chunk-faithful record/replay/fork, governor at stream start (raw event iteration + OpenAI streaming still open)
 - [x] Parallel tool-call replay: thread-safe recorder + id-matching within the turn's tool block (any completion order replays; ids never match across turns)
 - [ ] OpenTelemetry exporter (GenAI semantic conventions — composability with Langfuse/Datadog)

@@ -19,6 +19,8 @@ reflight = "reflight.cli:main"
 
 [dependency-groups]
 dev = [
+    "langchain-openai>=1.3.3",
+    "langgraph>=1.2.8",
     "pytest>=8",
     "ruff>=0.8",
 ]

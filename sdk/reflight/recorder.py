@@ -41,12 +41,35 @@ class _WrappedClient:
         self.messages = session.messages
 
 
+class _RawResponseWrapper:
+    """Mimics openai's raw-response object (langchain uses with_raw_response)."""
+
+    def __init__(self, inner: Any):
+        self._inner = inner
+        self.headers: dict = {}
+
+    def parse(self) -> Any:
+        return self._inner
+
+
+class _RawResponseShim:
+    def __init__(self, completions: Any):
+        self._completions = completions
+
+    def create(self, **kwargs: Any) -> _RawResponseWrapper:
+        return _RawResponseWrapper(self._completions.create(**kwargs))
+
+
 class _OpenAICompletions:
     def __init__(self, session: Any):
         self._session = session
 
     def create(self, **kwargs: Any):
         return self._session._openai_create(**kwargs)
+
+    @property
+    def with_raw_response(self) -> _RawResponseShim:
+        return _RawResponseShim(self)
 
 
 class _WrappedOpenAIClient:
