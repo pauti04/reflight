@@ -163,6 +163,35 @@ def get_events(db_path: Path | str, run_id: str) -> list[tuple[dict, float | Non
     return rows
 
 
+def add_finding(
+    db_path: Path | str,
+    run_id: str,
+    seq: int,
+    label: str,
+    severity: str,
+    confidence: float,
+    detail: str,
+) -> None:
+    """Append a finding (e.g. from the LLM judge) and fold it into the verdict."""
+    con = connect(db_path)
+    with con:
+        con.execute(
+            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?)",
+            (run_id, seq, label, severity, confidence, detail),
+        )
+        row = con.execute("SELECT verdict, labels FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        if row:
+            verdict = "fail" if severity == "fail" else (row["verdict"] or "warn")
+            if verdict == "pass":
+                verdict = "warn"
+            labels = sorted(set(json.loads(row["labels"] or "[]")) | {label})
+            con.execute(
+                "UPDATE runs SET verdict = ?, labels = ? WHERE run_id = ?",
+                (verdict, json.dumps(labels), run_id),
+            )
+    con.close()
+
+
 def get_findings(db_path: Path | str, run_id: str) -> list[dict]:
     con = connect(db_path)
     rows = [

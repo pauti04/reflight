@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any
 
 from .events import RunLog, hash_payload, read_events, to_jsonable
+from .fork import ForkSession
 from .recorder import Recorder
 from .replayer import ReplayDivergence, ReplayedToolError, Replayer
 
 __all__ = [
     "Recorder",
     "Replayer",
+    "ForkSession",
     "ReplayDivergence",
     "ReplayedToolError",
     "RunLog",
@@ -30,6 +32,7 @@ __all__ = [
     "record",
     "recording",
     "replay",
+    "fork",
 ]
 
 
@@ -72,3 +75,22 @@ def recording(
 def replay(run_dir: Path | str, step: bool = False) -> Replayer:
     """Open a recorded run for deterministic replay."""
     return Replayer(run_dir, step=step)
+
+
+def fork(
+    run_dir: Path | str,
+    at_seq: int,
+    client: Any = None,
+    tools: dict | None = None,
+    out_dir: Path | str | None = None,
+    db_path: Path | str | None = None,
+) -> ForkSession:
+    """Replay a recording up to at_seq, then go live — for testing a fix
+    mid-run. The fork writes a complete new recording of its own."""
+    session = ForkSession(
+        run_dir, at_seq, live_client=None, tools=tools, out_dir=out_dir, db_path=db_path
+    )
+    if client is not None:
+        session.wrap(client)
+    session.start(session.task or "")
+    return session

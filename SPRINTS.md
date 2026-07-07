@@ -71,9 +71,9 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** finish Phase 2's fuzzy half.
 
-- [ ] LLM-judge classifier for failures rules can't catch (bad reasoning, wrong answer)
-- [ ] Fork mode: replay to step N, go live from there (test a fix mid-run)
-- [ ] Judge accuracy sanity check against ~20 hand-labeled runs
+- [x] LLM-judge classifier for failures rules can't catch (bad reasoning, wrong answer) — `agentscope judge`, injectable client
+- [x] Fork mode: replay to step N, go live from there (test a fix mid-run) — forks are complete runs, diffable vs the original
+- [ ] Judge accuracy sanity check against ~20 hand-labeled runs (needs real API credentials — parked with the Sprint 0 close-out)
 
 **Done when:** a hallucination-style failure gets a sensible judge label; a fix can be tested via fork without re-running from scratch.
 **Demo artifact:** 🎬 **Milestone demo #2** — failure labeled, forked, fixed.

@@ -132,6 +132,34 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_judge(args: argparse.Namespace) -> int:
+    from .judge import JUDGE_MODEL, judge_run
+
+    events = [e for e, _ in store.get_events(args.db, args.run_id)]
+    if not events:
+        print(f"no run {args.run_id!r} in {args.db}")
+        return 1
+
+    import anthropic
+
+    result = judge_run(events, anthropic.Anthropic(), model=args.model or JUDGE_MODEL)
+    icon = "✓" if result["ok"] else "✗"
+    print(f"{icon} {result['label']} (conf {result['confidence']:.2f}): {result['reasoning']}")
+    if not result["ok"]:
+        end_seq = next(e["seq"] for e in reversed(events) if e["type"] == "run_end")
+        store.add_finding(
+            args.db,
+            args.run_id,
+            seq=end_seq,
+            label=f"judge_{result['label']}",
+            severity="fail",
+            confidence=result["confidence"],
+            detail=result["reasoning"],
+        )
+        print("finding recorded")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     from .server import serve
 
@@ -160,6 +188,11 @@ def main(argv: list[str] | None = None) -> int:
     p_diff.add_argument("run_a")
     p_diff.add_argument("run_b")
     p_diff.set_defaults(fn=cmd_diff)
+
+    p_judge = sub.add_parser("judge", help="LLM-judge a run (needs Anthropic credentials)")
+    p_judge.add_argument("run_id")
+    p_judge.add_argument("--model", default=None)
+    p_judge.set_defaults(fn=cmd_judge)
 
     p_serve = sub.add_parser("serve", help="start the query API for the timeline UI")
     p_serve.add_argument("--host", default="127.0.0.1")
