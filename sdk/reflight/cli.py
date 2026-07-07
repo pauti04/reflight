@@ -215,6 +215,19 @@ def cmd_export_static(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_otel(args: argparse.Namespace) -> int:
+    from .otel import export_to_otlp
+
+    events = [e for e, _ in store.get_events(args.db, args.run_id)]
+    if not events:
+        print(f"no run {args.run_id!r} in {args.db}")
+        return 1
+    count = export_to_otlp(args.run_id, events, endpoint=args.endpoint)
+    target = args.endpoint or "OTEL_EXPORTER_OTLP_* env configuration"
+    print(f"exported {count} spans for {args.run_id} → {target}")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     from .server import serve
 
@@ -262,6 +275,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_export.add_argument("--out", default="ui/public/demo")
     p_export.set_defaults(fn=cmd_export_static)
+
+    p_otel = sub.add_parser(
+        "otel", help="export a run's spans to an OTLP collector (needs reflight[otel])"
+    )
+    p_otel.add_argument("run_id")
+    p_otel.add_argument("--endpoint", default=None, help="OTLP HTTP traces endpoint")
+    p_otel.set_defaults(fn=cmd_otel)
 
     p_serve = sub.add_parser("serve", help="start the query API for the timeline UI")
     p_serve.add_argument("--host", default="127.0.0.1")

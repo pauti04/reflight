@@ -27,6 +27,7 @@ the whole reliability loop on top:
 | ✅ **Promote** | One command: recorded failure → editable YAML regression test |
 | 📊 **Harness** | N-run consistency scoring, baselines, CI gate that blocks reliability regressions |
 | ⛔ **Govern** | Hard cost/token budgets, loop circuit breaker, tool-call cache, cost dashboard with anomaly flags |
+| 📡 **Export** | `reflight otel <run_id>` ships any run to your OTLP collector as GenAI-convention spans — works *with* Langfuse/Datadog/Jaeger, not against them |
 
 ## Quickstart
 
