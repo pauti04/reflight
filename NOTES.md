@@ -15,8 +15,11 @@
 
 ### What breaks (or will break) determinism — the honest list
 
-- **Streaming** — not supported yet. `messages.stream()` needs chunk-level
-  recording. Deferred to Sprint 1/2; the facade makes the seam obvious.
+- **Streaming** — ✅ CLOSED (Sprint 10, 2026-07-07): `messages.stream()` helper
+  pattern (context manager + text_stream + get_final_message) records chunk
+  sequences into llm_call events and replays them chunk-identically; works in
+  record, replay, and fork; governor enforces at stream start. Still open:
+  raw event iteration (`create(stream=True)`) and OpenAI chat streaming.
 - **Timestamps/randomness in prompts** — anything volatile the agent puts in a
   request changes its hash and (correctly) breaks replay. Mitigation later:
   canonicalization hooks or fuzzy request matching. For now: keep prompts pure.

@@ -28,6 +28,9 @@ class _ForkMessages:
     def create(self, **kwargs: Any):
         return self._session._llm_create(**kwargs)
 
+    def stream(self, **kwargs: Any):
+        return self._session._llm_stream(**kwargs)
+
 
 class ForkSession:
     """Session facade: recorded events with seq < at_seq are served from the
@@ -123,32 +126,49 @@ class ForkSession:
             return event
         return None  # recording exhausted — continue live
 
+    def _match_prefix_llm(self, kwargs: dict) -> dict | None:
+        """Verify + re-emit the next recorded llm_call; None once past the fork."""
+        event = self._peek("llm_call")
+        if event is None:
+            self.live = True
+            return None
+        request_hash = hash_payload(to_jsonable(kwargs))
+        if request_hash != event["request_hash"]:
+            raise ReplayDivergence(
+                f"LLM request at seq {event['seq']} differs from the recording, "
+                f"which is before the fork point (seq {self.at_seq}) — the fix "
+                "changed behavior earlier than expected; fork at an earlier seq"
+            )
+        # re-emit the recorded exchange into the fork's own log
+        response_data = event["response"]
+        usage = response_data.get("usage") or {}
+        self._rec.total_input_tokens += usage.get("input_tokens") or 0
+        self._rec.total_output_tokens += usage.get("output_tokens") or 0
+        extra = {"stream": event["stream"]} if "stream" in event else {}
+        self._rec.log.emit(
+            "llm_call",
+            request=event["request"],
+            request_hash=event["request_hash"],
+            response=response_data,
+            **extra,
+        )
+        return event
+
     def _llm_create(self, **kwargs: Any):
         if not self.live:
-            event = self._peek("llm_call")
-            if event is None:
-                self.live = True
-            else:
-                request_hash = hash_payload(to_jsonable(kwargs))
-                if request_hash != event["request_hash"]:
-                    raise ReplayDivergence(
-                        f"LLM request at seq {event['seq']} differs from the recording, "
-                        f"which is before the fork point (seq {self.at_seq}) — the fix "
-                        "changed behavior earlier than expected; fork at an earlier seq"
-                    )
-                # re-emit the recorded exchange into the fork's own log
-                response_data = event["response"]
-                usage = response_data.get("usage") or {}
-                self._rec.total_input_tokens += usage.get("input_tokens") or 0
-                self._rec.total_output_tokens += usage.get("output_tokens") or 0
-                self._rec.log.emit(
-                    "llm_call",
-                    request=event["request"],
-                    request_hash=event["request_hash"],
-                    response=response_data,
-                )
-                return Message.model_validate(response_data)
+            event = self._match_prefix_llm(kwargs)
+            if event is not None:
+                return Message.model_validate(event["response"])
         return self._rec._llm_create(**kwargs)
+
+    def _llm_stream(self, **kwargs: Any):
+        if not self.live:
+            event = self._match_prefix_llm(kwargs)
+            if event is not None:
+                from .streaming import ReplayStream
+
+                return ReplayStream(event)
+        return self._rec._llm_stream(**kwargs)
 
     def execute(self, name: str, tool_input: dict, tool_use_id: str) -> tuple[str, bool]:
         if not self.live:

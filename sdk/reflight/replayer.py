@@ -49,6 +49,9 @@ class _ReplayMessages:
     def create(self, **kwargs: Any):
         return self._session._llm_create(**kwargs)
 
+    def stream(self, **kwargs: Any):
+        return self._session._llm_stream(**kwargs)
+
 
 class _WrappedClient:
     def __init__(self, session: Any):
@@ -191,7 +194,7 @@ class Replayer:
         self.replayed_status = status
         self.replayed_final_text = final_text
 
-    def _llm_create(self, **kwargs: Any) -> Message:
+    def _match_llm(self, kwargs: dict) -> dict:
         event = self._next("llm_call")
         request_hash = hash_payload(to_jsonable(kwargs))
         if request_hash != event["request_hash"]:
@@ -203,7 +206,15 @@ class Replayer:
         if self.step:
             self._pause(event)
         self.replay_log.append(("llm_call", request_hash))
-        return Message.model_validate(event["response"])
+        return event
+
+    def _llm_create(self, **kwargs: Any) -> Message:
+        return Message.model_validate(self._match_llm(kwargs)["response"])
+
+    def _llm_stream(self, **kwargs: Any):
+        from .streaming import ReplayStream
+
+        return ReplayStream(self._match_llm(kwargs))
 
     def execute(self, name: str, tool_input: dict, tool_use_id: str) -> tuple[str, bool]:
         event = self._next("tool_call")

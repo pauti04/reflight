@@ -29,6 +29,9 @@ class _SessionMessages:
     def create(self, **kwargs: Any):
         return self._session._llm_create(**kwargs)
 
+    def stream(self, **kwargs: Any):
+        return self._session._llm_stream(**kwargs)
+
 
 class _WrappedClient:
     """Client-shaped facade so existing agent code keeps calling client.messages.create."""
@@ -189,7 +192,7 @@ class Recorder:
 
     # -- calls -------------------------------------------------------------------
 
-    def _llm_create(self, **kwargs: Any):
+    def _pre_llm(self) -> None:
         if self._live is None:
             raise RuntimeError(
                 "no live client: pass live_client= to Recorder or call session.wrap(...)"
@@ -202,9 +205,11 @@ class Recorder:
             except GovernorKill as kill:
                 self._kill(kill)
                 raise
+
+    def _emit_llm_call(
+        self, kwargs: dict, data: dict, stream_chunks: list[str] | None = None
+    ) -> None:
         request = to_jsonable(kwargs)
-        response = self._live.messages.create(**kwargs)
-        data = response.model_dump(mode="json")
         usage = data.get("usage") or {}
         self.total_input_tokens += usage.get("input_tokens") or 0
         self.total_output_tokens += usage.get("output_tokens") or 0
@@ -213,13 +218,26 @@ class Recorder:
         call_cost = cost_usd(data.get("model"), usage)
         if call_cost is not None:
             self.total_cost_usd += call_cost
+        extra = {"stream": {"text_chunks": stream_chunks}} if stream_chunks is not None else {}
         self.log.emit(
             "llm_call",
             request=request,
             request_hash=hash_payload(request),
             response=data,
+            **extra,
         )
+
+    def _llm_create(self, **kwargs: Any):
+        self._pre_llm()
+        response = self._live.messages.create(**kwargs)
+        self._emit_llm_call(kwargs, response.model_dump(mode="json"))
         return response
+
+    def _llm_stream(self, **kwargs: Any):
+        self._pre_llm()
+        from .streaming import RecordingStream
+
+        return RecordingStream(self, kwargs)
 
     def _run_tool(
         self, name: str, tool_input: dict, tool_use_id: str

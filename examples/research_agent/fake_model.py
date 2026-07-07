@@ -51,7 +51,39 @@ def _script_for(task: str) -> list[dict]:
     ]
 
 
+class _FakeStream:
+    """Mimics anthropic's message stream: word-by-word text chunks."""
+
+    def __init__(self, final: Message):
+        self._final = final
+
+    @property
+    def text_stream(self):
+        for block in self._final.content:
+            if block.type == "text":
+                words = block.text.split(" ")
+                for i, word in enumerate(words):
+                    yield word if i == len(words) - 1 else word + " "
+
+    def get_final_message(self) -> Message:
+        return self._final
+
+
+class _FakeStreamManager:
+    def __init__(self, final: Message):
+        self._stream = _FakeStream(final)
+
+    def __enter__(self) -> _FakeStream:
+        return self._stream
+
+    def __exit__(self, *exc: Any) -> bool:
+        return False
+
+
 class _FakeMessages:
+    def stream(self, **kwargs: Any) -> _FakeStreamManager:
+        return _FakeStreamManager(self.create(**kwargs))
+
     def create(self, **kwargs: Any) -> Message:
         messages = kwargs["messages"]
         first_user = messages[0]["content"]
