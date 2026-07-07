@@ -198,6 +198,23 @@ def cmd_judge(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_static(args: argparse.Namespace) -> int:
+    """Write JSON snapshots of the db for the zero-backend static demo UI."""
+    out = Path(args.out)
+    (out / "events").mkdir(parents=True, exist_ok=True)
+    runs = store.list_runs(args.db)
+    for run in runs:
+        run["findings"] = store.get_findings(args.db, run["run_id"])
+        events = store.get_events(args.db, run["run_id"])
+        (out / "events" / f"{run['run_id']}.json").write_text(
+            json.dumps([{"event": e, "cost_usd": c} for e, c in events])
+        )
+    (out / "runs.json").write_text(json.dumps(runs))
+    (out / "costs.json").write_text(json.dumps(store.costs_summary(args.db)))
+    print(f"exported {len(runs)} runs → {out}")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     from .server import serve
 
@@ -239,6 +256,12 @@ def main(argv: list[str] | None = None) -> int:
     p_judge.add_argument("run_id")
     p_judge.add_argument("--model", default=None)
     p_judge.set_defaults(fn=cmd_judge)
+
+    p_export = sub.add_parser(
+        "export-static", help="write JSON snapshots for the static demo UI"
+    )
+    p_export.add_argument("--out", default="ui/public/demo")
+    p_export.set_defaults(fn=cmd_export_static)
 
     p_serve = sub.add_parser("serve", help="start the query API for the timeline UI")
     p_serve.add_argument("--host", default="127.0.0.1")

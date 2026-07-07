@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { API, fmtCost } from "@/lib/api";
+import { fetchCosts, fmtCost } from "@/lib/api";
 
 type Group = { key: string; runs: number; total_usd: number; mean_usd: number };
 type Anomaly = {
@@ -53,8 +53,7 @@ export default function CostsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/api/costs`, { cache: "no-store" })
-      .then((r) => r.json())
+    fetchCosts()
       .then(setCosts)
       .catch((e) => setError(String(e)));
   }, []);

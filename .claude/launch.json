@@ -13,6 +13,13 @@
       "runtimeArgs": ["run", "dev", "--prefix", "ui"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "static-demo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8931", "-d", "ui/out"],
+      "port": 8931,
+      "autoPort": false
     }
   ]
 }

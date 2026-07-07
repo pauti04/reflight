@@ -3,6 +3,9 @@
 **Flight recorder for AI agents: record every run, replay it deterministically,
 turn failures into regression tests.**
 
+**▶ [Live demo](https://pauti04.github.io/reflight-demo/)** — the timeline UI
+with pre-recorded runs (flaky fleet, governor kills, diffs), zero install.
+
 Agents are programs whose most important steps are non-deterministic and
 external. When one fails, the failure evaporates — re-running gives you a
 *different* run. Reflight makes agent failures **reproducible**, and builds
@@ -56,6 +59,13 @@ cd ui && npm install && npm run dev   # UI on :3000
 
 Runs list → click a run → color-coded timeline → event inspector. Findings
 banner on failed runs; pick two runs to diff; `/costs` for the money view.
+
+To build the zero-backend static demo site (what the hosted demo runs):
+
+```bash
+uv run reflight export-static        # db → ui/public/demo/*.json
+cd ui && STATIC_EXPORT=1 NEXT_PUBLIC_STATIC_DEMO=1 npm run build   # → ui/out/
+```
 
 ### Instrument your own agent — 3 lines
 

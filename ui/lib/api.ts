@@ -1,6 +1,11 @@
 export const API =
   process.env.NEXT_PUBLIC_REFLIGHT_API ?? "http://127.0.0.1:8724";
 
+// Static demo mode: no backend — data comes from JSON snapshots baked into
+// the build by `reflight export-static` (served under BASE/demo/).
+export const STATIC = process.env.NEXT_PUBLIC_STATIC_DEMO === "1";
+export const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export type Finding = {
   seq: number;
   label: string;
@@ -34,7 +39,8 @@ export type AgentEvent = Record<string, any>;
 export type EventRow = { event: AgentEvent; cost_usd: number | null };
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { cache: "no-store" });
+  const base = STATIC ? BASE : API;
+  const res = await fetch(`${base}${path}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`${res.status} from ${path}`);
   return res.json();
 }
@@ -48,12 +54,35 @@ export type Diff = {
   b: AgentEvent[];
 };
 
-export const fetchRuns = () => get<Run[]>("/api/runs");
-export const fetchRun = (id: string) => get<Run>(`/api/runs/${id}`);
+export const fetchRuns = () =>
+  STATIC ? get<Run[]>("/demo/runs.json") : get<Run[]>("/api/runs");
+
+export const fetchRun = async (id: string): Promise<Run> => {
+  if (!STATIC) return get<Run>(`/api/runs/${id}`);
+  const run = (await fetchRuns()).find((r) => r.run_id === id);
+  if (!run) throw new Error(`no run ${id}`);
+  return run;
+};
+
 export const fetchEvents = (id: string) =>
-  get<EventRow[]>(`/api/runs/${id}/events`);
-export const fetchDiff = (a: string, b: string) =>
-  get<Diff>(`/api/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+  STATIC
+    ? get<EventRow[]>(`/demo/events/${id}.json`)
+    : get<EventRow[]>(`/api/runs/${id}/events`);
+
+export const fetchDiff = async (a: string, b: string): Promise<Diff> => {
+  if (!STATIC)
+    return get<Diff>(`/api/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+  const { diffRuns } = await import("./static-diff");
+  const [rowsA, rowsB] = await Promise.all([fetchEvents(a), fetchEvents(b)]);
+  return diffRuns(
+    rowsA.map((r) => r.event),
+    rowsB.map((r) => r.event),
+  );
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const fetchCosts = (): Promise<any> =>
+  STATIC ? get("/demo/costs.json") : get("/api/costs");
 
 export const parseLabels = (labels: string | null): string[] => {
   try {

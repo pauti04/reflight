@@ -131,7 +131,7 @@ quickstart commands completed in ~3s (record, verify, import, verdict board). PA
 
 **Goal:** ship it to the world; harvest the portfolio assets.
 
-- [ ] Hosted read-only demo: pre-recorded flaky-agent runs, replayable in the browser, zero install (needs a host — user-gated)
+- [x] Hosted read-only demo: pre-recorded flaky-agent runs, replayable in the browser, zero install — **live at https://pauti04.github.io/reflight-demo/** (static export + client-side diff; deployed from public repo pauti04/reflight-demo)
 - [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test) — **shot-by-shot script drafted** in docs/demo-video-script.md; user records
 - [x] Launch post drafts (Show HN, X thread, r/LocalLLaMA) in docs/launch-posts.md
 - [x] Blog post #2: "How deterministic replay for AI agents works" (draft in docs/)
