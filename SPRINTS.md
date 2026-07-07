@@ -135,7 +135,8 @@ quickstart commands completed in ~3s (record, verify, import, verdict board). PA
 - [ ] 3-minute demo video (the money shot: side-by-side pass/fail diff + promote-to-test) — **shot-by-shot script drafted** in docs/demo-video-script.md; user records
 - [x] Launch post drafts (Show HN, X thread, r/LocalLLaMA) in docs/launch-posts.md
 - [x] Blog post #2: "How deterministic replay for AI agents works" (draft in docs/)
-- [ ] Show HN + r/LocalLLaMA + X thread; respond to feedback for a week (user-gated)
+- [x] Repo flipped **public** (2026-07-07): https://github.com/pauti04/reflight — homepage → hosted demo, topics set
+- [ ] Show HN + r/LocalLLaMA + X thread; respond to feedback for a week (user posts; drafts ready)
 - [x] Portfolio page: problem → demo → architecture → what I learned (draft in docs/)
 - [x] Rename decided + executed: **Reflight** (PyPI free at decision time — register on first publish)
 
