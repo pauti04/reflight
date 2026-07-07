@@ -1,0 +1,19 @@
+# docker compose up → API on :8724, timeline UI on :3000.
+# Record runs on the host (they land in ./runs); the API serves them read-only.
+services:
+  api:
+    build: .
+    ports:
+      - "8724:8724"
+    volumes:
+      - ./runs:/app/runs
+
+  ui:
+    build:
+      context: ./ui
+      args:
+        NEXT_PUBLIC_AGENTSCOPE_API: http://localhost:8724
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api

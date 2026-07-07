@@ -37,6 +37,23 @@ class _WrappedClient:
         self.messages = session.messages
 
 
+class _OpenAICompletions:
+    def __init__(self, session: Any):
+        self._session = session
+
+    def create(self, **kwargs: Any):
+        return self._session._openai_create(**kwargs)
+
+
+class _WrappedOpenAIClient:
+    """OpenAI-shaped facade: client.chat.completions.create(...)."""
+
+    def __init__(self, session: Any):
+        from types import SimpleNamespace
+
+        self.chat = SimpleNamespace(completions=_OpenAICompletions(session))
+
+
 class Recorder:
     """The agent talks to this instead of the world; the world gets logged.
 
@@ -57,6 +74,7 @@ class Recorder:
     ):
         self.log = RunLog(run_dir)
         self._live = live_client
+        self._openai: Any = None
         self._tools = dict(tools or {})
         self._db_path = db_path
         self._governor = governor
@@ -77,6 +95,39 @@ class Recorder:
             client = client()
         self._live = client
         return _WrappedClient(self)
+
+    def wrap_openai(self, client: Any) -> _WrappedOpenAIClient:
+        """Wrap an OpenAI-compatible client so chat.completions.create is recorded."""
+        if callable(client) and not hasattr(client, "chat"):
+            client = client()
+        self._openai = client
+        return _WrappedOpenAIClient(self)
+
+    def _openai_create(self, **kwargs: Any):
+        if self._governor is not None:
+            from .governor import GovernorKill
+
+            try:
+                self._governor.before_llm(self)
+            except GovernorKill as kill:
+                self._kill(kill)
+                raise
+        if self._openai is None:
+            raise RuntimeError("no OpenAI client: call session.wrap_openai(client) first")
+        request = to_jsonable(kwargs)
+        response = self._openai.chat.completions.create(**kwargs)
+        data = response.model_dump(mode="json") if hasattr(response, "model_dump") else dict(response)
+        usage = data.get("usage") or {}
+        self.total_input_tokens += usage.get("prompt_tokens") or 0
+        self.total_output_tokens += usage.get("completion_tokens") or 0
+        self.log.emit(
+            "llm_call",
+            provider="openai",
+            request=request,
+            request_hash=hash_payload(request),
+            response=data,
+        )
+        return response
 
     def tool(self, fn: ToolFn) -> ToolFn:
         """Decorator: record every call to fn — arguments, result, and errors.

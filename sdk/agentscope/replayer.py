@@ -55,6 +55,60 @@ class _WrappedClient:
         self.messages = session.messages
 
 
+class AttrView:
+    """Read-only attribute view over recorded JSON, so replayed OpenAI-style
+    responses support the same access patterns (resp.choices[0].message.content)
+    without requiring the openai package."""
+
+    def __init__(self, data: Any):
+        object.__setattr__(self, "_data", data)
+
+    def __getattr__(self, name: str) -> Any:
+        data = object.__getattribute__(self, "_data")
+        if isinstance(data, dict) and name in data:
+            return _view(data[name])
+        raise AttributeError(name)
+
+    def __getitem__(self, key: Any) -> Any:
+        return _view(object.__getattribute__(self, "_data")[key])
+
+    def __len__(self) -> int:
+        return len(object.__getattribute__(self, "_data"))
+
+    def __iter__(self):
+        return (_view(item) for item in object.__getattribute__(self, "_data"))
+
+    def __eq__(self, other: Any) -> bool:
+        return object.__getattribute__(self, "_data") == (
+            object.__getattribute__(other, "_data") if isinstance(other, AttrView) else other
+        )
+
+    def __repr__(self) -> str:
+        return f"AttrView({object.__getattribute__(self, '_data')!r})"
+
+    def model_dump(self, **_: Any) -> Any:
+        return object.__getattribute__(self, "_data")
+
+
+def _view(value: Any) -> Any:
+    return AttrView(value) if isinstance(value, (dict, list)) else value
+
+
+class _ReplayOpenAICompletions:
+    def __init__(self, session: "Replayer"):
+        self._session = session
+
+    def create(self, **kwargs: Any):
+        return self._session._openai_create(**kwargs)
+
+
+class _WrappedOpenAIClient:
+    def __init__(self, session: "Replayer"):
+        from types import SimpleNamespace
+
+        self.chat = SimpleNamespace(completions=_ReplayOpenAICompletions(session))
+
+
 class Replayer:
     mode = "replay"
 
@@ -80,6 +134,24 @@ class Replayer:
         """Accepts and ignores a client/factory: replay never touches the network."""
         del client
         return _WrappedClient(self)
+
+    def wrap_openai(self, client: Any = None) -> _WrappedOpenAIClient:
+        """Accepts and ignores a client: replay never touches the network."""
+        del client
+        return _WrappedOpenAIClient(self)
+
+    def _openai_create(self, **kwargs: Any) -> AttrView:
+        event = self._next("llm_call")
+        request_hash = hash_payload(to_jsonable(kwargs))
+        if request_hash != event["request_hash"]:
+            raise ReplayDivergence(
+                f"LLM request at seq {event['seq']} differs from the recording "
+                f"(hash {request_hash} != {event['request_hash']})."
+            )
+        if self.step:
+            self._pause(event)
+        self.replay_log.append(("llm_call", request_hash))
+        return AttrView(event["response"])
 
     def tool(self, fn: Callable[..., str]) -> Callable[..., str]:
         """Decorator: serve fn's calls from the recording instead of running it."""
