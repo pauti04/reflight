@@ -1,8 +1,8 @@
 """SQLite index over recorded runs.
 
 events.jsonl in each run directory stays the source of truth (replay reads it
-directly); the database is the query layer for the CLI and, later, the UI.
-Cost is computed at ingest from each llm_call's usage block.
+directly); the database is the query layer for the CLI and UI. Cost and
+failure classification are computed at ingest.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+from . import classify as classify_mod
 from . import schema
 from .events import read_events
 from .pricing import cost_usd
@@ -20,6 +21,8 @@ CREATE TABLE IF NOT EXISTS runs (
     run_id        TEXT PRIMARY KEY,
     task          TEXT,
     status        TEXT,
+    verdict       TEXT,
+    labels        TEXT,
     started_at    REAL,
     ended_at      REAL,
     model         TEXT,
@@ -40,6 +43,14 @@ CREATE TABLE IF NOT EXISTS events (
     cost_usd REAL,
     PRIMARY KEY (run_id, seq)
 );
+CREATE TABLE IF NOT EXISTS findings (
+    run_id     TEXT,
+    seq        INTEGER,
+    label      TEXT,
+    severity   TEXT,
+    confidence REAL,
+    detail     TEXT
+);
 """
 
 
@@ -49,6 +60,11 @@ def connect(db_path: Path | str) -> sqlite3.Connection:
     con = sqlite3.connect(str(path))
     con.row_factory = sqlite3.Row
     con.executescript(_TABLES)
+    # dev-stage migration: add columns introduced after a db was created
+    existing = {row["name"] for row in con.execute("PRAGMA table_info(runs)")}
+    for column in ("verdict", "labels"):
+        if column not in existing:
+            con.execute(f"ALTER TABLE runs ADD COLUMN {column} TEXT")
     return con
 
 
@@ -67,7 +83,7 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
 
     total_cost = 0.0
     priced = False
-    rows = []
+    event_rows = []
     for event in events:
         cost = None
         if event["type"] == "llm_call":
@@ -76,22 +92,36 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
             if cost is not None:
                 total_cost += cost
                 priced = True
-        rows.append(
+        event_rows.append(
             (run_id, event["seq"], event.get("ts"), event["type"], json.dumps(event), cost)
         )
 
+    findings = classify_mod.classify(events)
+    verdict = classify_mod.verdict(findings)
+    labels = sorted({f.label for f in findings})
     tool_errors = sum(1 for e in events if e["type"] == "tool_call" and e.get("is_error"))
 
     con = connect(db_path)
     with con:
         con.execute("DELETE FROM events WHERE run_id = ?", (run_id,))
-        con.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)", rows)
+        con.execute("DELETE FROM findings WHERE run_id = ?", (run_id,))
+        con.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)", event_rows)
+        con.executemany(
+            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?)",
+            [(run_id, f.seq, f.label, f.severity, f.confidence, f.detail) for f in findings],
+        )
         con.execute(
-            "INSERT OR REPLACE INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """INSERT OR REPLACE INTO runs
+               (run_id, task, status, verdict, labels, started_at, ended_at, model,
+                input_tokens, output_tokens, cost_usd, final_text, event_count,
+                tool_errors, run_dir)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id,
                 start.get("task"),
                 end.get("status"),
+                verdict,
+                json.dumps(labels),
                 start.get("ts"),
                 end.get("ts"),
                 model,
@@ -105,7 +135,13 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
             ),
         )
     con.close()
-    return {"run_id": run_id, "cost_usd": total_cost if priced else None, "problems": problems}
+    return {
+        "run_id": run_id,
+        "cost_usd": total_cost if priced else None,
+        "verdict": verdict,
+        "labels": labels,
+        "problems": problems,
+    }
 
 
 def list_runs(db_path: Path | str) -> list[dict]:
@@ -121,6 +157,20 @@ def get_events(db_path: Path | str, run_id: str) -> list[tuple[dict, float | Non
         (json.loads(r["payload"]), r["cost_usd"])
         for r in con.execute(
             "SELECT payload, cost_usd FROM events WHERE run_id = ? ORDER BY seq", (run_id,)
+        )
+    ]
+    con.close()
+    return rows
+
+
+def get_findings(db_path: Path | str, run_id: str) -> list[dict]:
+    con = connect(db_path)
+    rows = [
+        dict(r)
+        for r in con.execute(
+            "SELECT seq, label, severity, confidence, detail FROM findings "
+            "WHERE run_id = ? ORDER BY seq",
+            (run_id,),
         )
     ]
     con.close()

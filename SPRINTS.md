@@ -59,10 +59,10 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the tool names *why* runs failed.
 
-- [ ] Rule classifiers: loop (repeated near-identical calls), wrong tool args (schema validation), token/cost blowout, tool-error cascade
-- [ ] Failure tags + confidence surfaced in timeline UI and CLI
-- [ ] Run-diff view: two runs of one task side-by-side, first divergence highlighted
-- [ ] Flaky example agent with 3 seeded failure modes (becomes the eternal demo fixture)
+- [x] Rule classifiers: loop (repeated near-identical calls), wrong tool args (schema validation), token/cost blowout, tool-error cascade (+ crash, runaway)
+- [x] Failure tags + confidence surfaced in timeline UI and CLI
+- [x] Run-diff view: two runs of one task side-by-side, first divergence highlighted (`agentscope diff` + /diff page)
+- [x] Flaky example agent with 3 seeded failure modes (becomes the eternal demo fixture)
 
 **Done when:** 10 runs of the flaky agent → dashboard shows pass/fail with each failure auto-labeled correctly.
 **Demo artifact:** screenshot of the labeled failure dashboard + diff view.

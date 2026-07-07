@@ -173,6 +173,41 @@ export default function RunPage() {
         </span>
       </div>
 
+      {(run.findings?.length ?? 0) > 0 && (
+        <div className="mb-5 rounded-lg border border-red-900/60 bg-red-950/30 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-red-300">
+            ⚠ {run.findings!.length} finding{run.findings!.length > 1 ? "s" : ""}
+          </p>
+          <ul className="space-y-1">
+            {run.findings!.map((f, i) => {
+              const idx = events.findIndex((r) => r.event.seq === f.seq);
+              return (
+                <li key={i} className="text-sm">
+                  <button
+                    onClick={() => idx >= 0 && setSelected(idx)}
+                    className="text-left hover:underline"
+                  >
+                    <span
+                      className={`mr-2 rounded px-1.5 py-0.5 font-mono text-xs ${
+                        f.severity === "fail"
+                          ? "bg-red-900/70 text-red-200"
+                          : "bg-amber-900/70 text-amber-200"
+                      }`}
+                    >
+                      {f.label}
+                    </span>
+                    <span className="text-zinc-300">{f.detail}</span>
+                    <span className="ml-2 font-mono text-xs text-zinc-500">
+                      seq {f.seq} · conf {f.confidence.toFixed(2)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* timeline */}
         <ol className="relative space-y-1">

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from . import store
@@ -36,18 +37,21 @@ def cmd_import(args: argparse.Namespace) -> int:
     return 0
 
 
+_VERDICT_ICON = {"pass": "✓", "warn": "~", "fail": "✗"}
+
+
 def cmd_runs(args: argparse.Namespace) -> int:
     runs = store.list_runs(args.db)
     if not runs:
         print(f"no runs in {args.db} (try: agentscope import)")
         return 0
     for run in runs:
-        errors = f" ⚠{run['tool_errors']}" if run["tool_errors"] else ""
-        task = (run["task"] or "")[:50]
+        labels = ",".join(json.loads(run["labels"] or "[]"))
+        verdict = f"{_VERDICT_ICON.get(run['verdict'], '?')} {run['verdict'] or '?'}"
+        task = (run["task"] or "")[:44]
         print(
-            f"{run['run_id']:24} [{run['status']}]{errors}  {run['model'] or '?':18} "
-            f"{run['event_count']:3}ev  {run['input_tokens'] or 0}/{run['output_tokens'] or 0}tok  "
-            f"{_fmt_cost(run['cost_usd']):>8}  — {task}"
+            f"{run['run_id']:24} {verdict:7} {labels:28.28} "
+            f"{run['event_count']:3}ev  {_fmt_cost(run['cost_usd']):>8}  — {task}"
         )
     return 0
 
@@ -85,6 +89,46 @@ def cmd_show(args: argparse.Namespace) -> int:
                 f"{event['output_tokens']}tok total"
             )
         print(f"{seq:3}  {event_type:15} {detail}")
+
+    findings = store.get_findings(args.db, args.run_id)
+    if findings:
+        print("\nfindings:")
+        for f in findings:
+            print(
+                f"  [{f['severity']}] {f['label']} (conf {f['confidence']:.2f}, "
+                f"seq {f['seq']}): {f['detail']}"
+            )
+    return 0
+
+
+def cmd_diff(args: argparse.Namespace) -> int:
+    from .diff import diff_runs, event_signature
+
+    events_a = [e for e, _ in store.get_events(args.db, args.run_a)]
+    events_b = [e for e, _ in store.get_events(args.db, args.run_b)]
+    if not events_a or not events_b:
+        print("both runs must exist in the db (agentscope import)")
+        return 1
+
+    result = diff_runs(events_a, events_b)
+    if result["identical"]:
+        print(f"{args.run_a} and {args.run_b} are identical ({result['a_len']} events)")
+        return 0
+
+    d = result["divergence_seq"]
+    if d is None:
+        print(
+            f"{args.run_a} ({result['a_len']}ev) is a prefix of {args.run_b} "
+            f"({result['b_len']}ev) — no differing event"
+        )
+        return 0
+
+    print(f"first divergence at seq {d} (events 0..{d - 1} identical):\n")
+    for name, events in ((args.run_a, events_a), (args.run_b, events_b)):
+        event = events[d] if d < len(events) else None
+        sig = event_signature(event) if event else "(run already ended)"
+        print(f"  {name}:")
+        print(f"    {sig}\n")
     return 0
 
 
@@ -111,6 +155,11 @@ def main(argv: list[str] | None = None) -> int:
     p_show = sub.add_parser("show", help="event timeline for one run")
     p_show.add_argument("run_id")
     p_show.set_defaults(fn=cmd_show)
+
+    p_diff = sub.add_parser("diff", help="first divergence between two runs of one task")
+    p_diff.add_argument("run_a")
+    p_diff.add_argument("run_b")
+    p_diff.set_defaults(fn=cmd_diff)
 
     p_serve = sub.add_parser("serve", help="start the query API for the timeline UI")
     p_serve.add_argument("--host", default="127.0.0.1")

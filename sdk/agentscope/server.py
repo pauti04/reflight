@@ -31,7 +31,18 @@ def create_app(db_path: str | Path = "runs/agentscope.db") -> FastAPI:
         run = next((r for r in store.list_runs(db_path) if r["run_id"] == run_id), None)
         if run is None:
             raise HTTPException(404, f"no run {run_id!r}")
+        run["findings"] = store.get_findings(db_path, run_id)
         return run
+
+    @app.get("/api/diff")
+    def get_diff(a: str, b: str) -> dict:
+        from .diff import diff_runs
+
+        events_a = [e for e, _ in store.get_events(db_path, a)]
+        events_b = [e for e, _ in store.get_events(db_path, b)]
+        if not events_a or not events_b:
+            raise HTTPException(404, "both runs must exist")
+        return {**diff_runs(events_a, events_b), "a": events_a, "b": events_b}
 
     @app.get("/api/runs/{run_id}/events")
     def get_events(run_id: str) -> list[dict]:
