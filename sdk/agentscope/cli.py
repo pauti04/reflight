@@ -132,6 +132,16 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_promote(args: argparse.Namespace) -> int:
+    from .testing import promote
+
+    path = promote(args.db, args.run_id, args.tests_dir)
+    print(f"promoted {args.run_id} → {path}")
+    print("edit the assertions to state what SHOULD happen, then run your suite")
+    print("(agentscope.testing.run_suite — see examples/flaky_agent/regression_demo.py)")
+    return 0
+
+
 def cmd_judge(args: argparse.Namespace) -> int:
     from .judge import JUDGE_MODEL, judge_run
 
@@ -188,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
     p_diff.add_argument("run_a")
     p_diff.add_argument("run_b")
     p_diff.set_defaults(fn=cmd_diff)
+
+    p_promote = sub.add_parser("promote", help="turn a recorded run into a regression test")
+    p_promote.add_argument("run_id")
+    p_promote.add_argument("--tests-dir", default="agent_tests")
+    p_promote.set_defaults(fn=cmd_promote)
 
     p_judge = sub.add_parser("judge", help="LLM-judge a run (needs Anthropic credentials)")
     p_judge.add_argument("run_id")

@@ -82,10 +82,10 @@ with networking off, in <2s, at $0.00.
 
 **Goal:** the killer feature. Failures become regression tests.
 
-- [ ] **`agentscope promote <run_id>`** — converts a recorded run into a replayable test case with auto-generated assertions (editable)
-- [ ] Task spec format: input, assertions, optional LLM-judge rubric
-- [ ] Test runner: replay-mode execution of promoted tests (fast, free, offline)
-- [ ] N-run live executor with concurrency + hard cost cap
+- [x] **`agentscope promote <run_id>`** — converts a recorded run into a replayable test case with auto-generated assertions (editable)
+- [x] Task spec format: input, assertions, optional LLM-judge rubric (YAML, commented)
+- [x] Test runner: replay-mode execution of promoted tests (fast, free, offline; replay failures re-verified live so model-side fixes are caught)
+- [x] N-run live executor with concurrency + hard cost cap
 
 **Done when:** a failed run is promoted in one command and the resulting test fails until the agent is fixed, then passes.
 **Demo artifact:** terminal recording of fail → promote → fix → pass.
