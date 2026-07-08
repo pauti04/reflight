@@ -239,6 +239,7 @@ export default function RunView({ id }: { id: string }) {
   const [typeFilter, setTypeFilter] = useState<"all" | "llm_call" | "tool_call" | "failures">(
     "all",
   );
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     fetchRun(id).then(setRun).catch((e) => setError(String(e)));
@@ -261,6 +262,20 @@ export default function RunView({ id }: { id: string }) {
         ? isFailure(row.event)
         : row.event.type === typeFilter,
   );
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setInterval(() => {
+      setSelected((s) => {
+        if (s >= visible.length - 1) {
+          setPlaying(false);
+          return s;
+        }
+        return s + 1;
+      });
+    }, 700);
+    return () => clearInterval(timer);
+  }, [playing, visible.length]);
 
   const onKey = useCallback(
     (e: KeyboardEvent) => {
@@ -372,7 +387,33 @@ export default function RunView({ id }: { id: string }) {
         </div>
       )}
 
-      <div className="mb-2 flex gap-1">
+      {run.promoted_yaml && (
+        <details className="mb-5 rounded-lg border border-sky-900/70 bg-sky-950/20 p-3">
+          <summary className="cursor-pointer font-mono text-xs font-semibold text-sky-300">
+            ⚡ this failure is one command from being a regression test —
+            `reflight promote {run.run_id}` writes:
+          </summary>
+          <pre className="mt-2 max-h-64 overflow-auto rounded bg-zinc-900 p-3 text-xs text-zinc-300">
+            {run.promoted_yaml}
+          </pre>
+          <p className="mt-2 text-xs text-zinc-500">
+            Edit the assertions to state what SHOULD happen — then it runs in plain
+            pytest, replay-first: passing costs $0.00.
+          </p>
+        </details>
+      )}
+
+      <div className="mb-2 flex items-center gap-1">
+        <button
+          onClick={() => {
+            if (!playing && selected >= visible.length - 1) setSelected(0);
+            setPlaying((p) => !p);
+          }}
+          className="mr-2 rounded border border-emerald-800 bg-emerald-950/60 px-3 py-0.5
+                     font-mono text-xs text-emerald-300 hover:bg-emerald-900/60"
+        >
+          {playing ? "⏸ pause" : "▶ replay"}
+        </button>
         {(
           [
             ["all", events.length],
@@ -407,7 +448,10 @@ export default function RunView({ id }: { id: string }) {
             return (
               <li key={event.seq}>
                 <button
-                  onClick={() => setSelected(i)}
+                  onClick={() => {
+                    setPlaying(false);
+                    setSelected(i);
+                  }}
                   className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm ${
                     i === selected
                       ? "bg-zinc-800/80 ring-1 ring-zinc-700"

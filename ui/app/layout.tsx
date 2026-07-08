@@ -6,9 +6,27 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const HERO =
+  "https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png";
+const DESCRIPTION =
+  "Flight recorder for AI agents: record every run, replay it deterministically, turn failures into regression tests.";
+
 export const metadata: Metadata = {
-  title: "Reflight",
-  description: "Flight recorder for AI agents",
+  title: "Reflight — flight recorder for AI agents",
+  description: DESCRIPTION,
+  metadataBase: new URL("https://pauti04.github.io/reflight-demo/"),
+  openGraph: {
+    title: "Reflight — flight recorder for AI agents",
+    description: DESCRIPTION,
+    type: "website",
+    images: [{ url: HERO, width: 1440, height: 820 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Reflight — flight recorder for AI agents",
+    description: DESCRIPTION,
+    images: [HERO],
+  },
 };
 
 export default function RootLayout({

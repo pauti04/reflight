@@ -21,6 +21,7 @@ export type Run = {
   verdict: "pass" | "warn" | "fail" | null;
   labels: string | null; // JSON array
   findings?: Finding[];
+  promoted_yaml?: string | null; // static demo: what `reflight promote` writes
   started_at: number | null;
   ended_at: number | null;
   model: string | null;
