@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchEvents, type AgentEvent, type EventRow } from "@/lib/api";
+import {
+  fetchEvents,
+  fetchRun,
+  type AgentEvent,
+  type EventRow,
+  type Finding,
+} from "@/lib/api";
 
-const RUN_ID = "flaky-01";
+const RUN_ID = "refund-01";
 const TICK_MS = 520;
 const VERDICT_HOLD_MS = 3200;
 const RESTART_HOLD_MS = 1600;
@@ -41,6 +47,7 @@ function line(event: AgentEvent): { text: string; tone: "dim" | "normal" | "bad"
 
 export default function FdrPanel() {
   const [rows, setRows] = useState<EventRow[]>([]);
+  const [finding, setFinding] = useState<Finding | null>(null);
   const [shown, setShown] = useState(0);
   const [phase, setPhase] = useState<"play" | "verdict" | "hold">("play");
   const [reduced, setReduced] = useState(false);
@@ -50,6 +57,9 @@ export default function FdrPanel() {
     fetchEvents(RUN_ID)
       .then(setRows)
       .catch(() => setRows([]));
+    fetchRun(RUN_ID)
+      .then((run) => setFinding(run.findings?.[0] ?? null))
+      .catch(() => setFinding(null));
   }, []);
 
   useEffect(() => {
@@ -127,9 +137,12 @@ export default function FdrPanel() {
           done ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="text-red-400">
-          FINDING loop — calculator repeated 5 times with identical arguments (conf 0.95)
-        </div>
+        {finding && (
+          <div className="text-red-400">
+            FINDING {finding.label} — {finding.detail.slice(0, 110)} (conf{" "}
+            {finding.confidence.toFixed(2)})
+          </div>
+        )}
         <div className="text-zinc-500">
           replayed from the recording · api calls 0 · cost $0.00 · click to step
           through it yourself

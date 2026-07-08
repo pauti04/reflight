@@ -36,10 +36,22 @@ const STEPS = [
 ];
 
 const BUG_TRAIL = [
-  { href: "/reliability", label: "15 runs, 47% pass", sub: "the scoreboard" },
-  { href: "/runs/flaky-02", label: "one run fails", sub: "wrong tool args" },
-  { href: "/diff?a=flaky-00&b=flaky-02", label: "the diff shows why", sub: '"q" vs "query"' },
-  { href: "/runs/runaway-budget", label: "runaway killed at $0.50", sub: "the governor" },
+  { href: "/reliability", label: "10 runs, 30% pass", sub: "one support task" },
+  {
+    href: "/runs/refund-01",
+    label: "the refund API rejects every call",
+    sub: "amount sent as a string",
+  },
+  {
+    href: "/diff?a=refund-00&b=refund-01",
+    label: "the diff shows why",
+    sub: '49.99 vs "$49.99"',
+  },
+  {
+    href: "/runs/refund-runaway",
+    label: "runaway killed at $2.00",
+    sub: "gateway never settles",
+  },
 ];
 
 function Landing() {
@@ -57,12 +69,14 @@ function Landing() {
             Reflight records every run an agent makes, replays any of them
             deterministically, and turns the failures into regression tests.
             The panel on the right is a{" "}
-            <span className="text-zinc-200">real recording, replaying now</span> —
-            an agent stuck in a loop, caught and labeled. Nothing here is mocked.
+            <span className="text-zinc-200">real recording, replaying now</span>:
+            a support agent processing a damage claim sends the refund amount as
+            a string, and retries the same broken call until it gives up.
+            Caught, labeled, reproducible. Nothing here is mocked.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/runs/flaky-01"
+              href="/runs/refund-01"
               className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white
                          transition-colors hover:bg-orange-500"
             >
