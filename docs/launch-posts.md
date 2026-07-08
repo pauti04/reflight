@@ -32,6 +32,10 @@ becomes an append-only event log you can:
   the PR against a checked-in baseline.
 - **govern cost** — hard budgets and a loop circuit breaker that kill runaway
   runs, with the kill recorded in the run itself.
+- **catch repeat offenders** — every failure gets a stable fingerprint;
+  Reflight tells you "this exact bug appeared in 4 other runs" with links. In
+  our own demo data it discovered that two runaway-cost incidents were the
+  same loop bug as three earlier flaky runs — nobody told it that.
 
 Everything in the repo runs offline against a scripted model — no API key
 needed to try the demos. Apache-2.0. Feedback very welcome, especially on the
@@ -66,6 +70,10 @@ scoring with CI gates, and hard cost budgets with a loop circuit breaker.
 6/ A runaway agent with no turn limit, killed at a $0.50 budget — reason
 recorded in the run, dashboard flags it at 173× the task median. The flight
 recorder captures its own intervention.
+
+6.5/ And because every failure gets a fingerprint, Reflight noticed the
+runaway was the *same bug* as three earlier flaky runs — "↻ same bug in 4
+other runs." Your bug tracker can't do that. Your flight recorder can.
 
 7/ Open source, Apache-2.0, all demos run offline without an API key.
 https://github.com/pauti04/reflight — hosted demo: https://pauti04.github.io/reflight-demo/ — would love eyes on the replay semantics.
