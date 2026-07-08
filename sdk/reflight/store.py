@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS findings (
     label      TEXT,
     severity   TEXT,
     confidence REAL,
-    detail     TEXT
+    detail     TEXT,
+    signature  TEXT
 );
 """
 
@@ -111,6 +112,7 @@ def _connect_postgres(url: str) -> _PgAdapter:
         ) from exc
     adapter = _PgAdapter(psycopg.connect(url, row_factory=dict_row))
     adapter.executescript(_TABLES)
+    adapter.executescript("ALTER TABLE findings ADD COLUMN IF NOT EXISTS signature TEXT")
     return adapter
 
 
@@ -127,6 +129,9 @@ def connect(db_path: Path | str):
     for column in ("verdict", "labels", "agent"):
         if column not in existing:
             con.execute(f"ALTER TABLE runs ADD COLUMN {column} TEXT")
+    finding_cols = {row["name"] for row in con.execute("PRAGMA table_info(findings)")}
+    if "signature" not in finding_cols:
+        con.execute("ALTER TABLE findings ADD COLUMN signature TEXT")
     return con
 
 
@@ -169,8 +174,11 @@ def ingest_run(db_path: Path | str, run_dir: Path | str) -> dict:
         con.execute("DELETE FROM findings WHERE run_id = ?", (run_id,))
         con.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)", event_rows)
         con.executemany(
-            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?)",
-            [(run_id, f.seq, f.label, f.severity, f.confidence, f.detail) for f in findings],
+            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+                (run_id, f.seq, f.label, f.severity, f.confidence, f.detail, f.signature)
+                for f in findings
+            ],
         )
         con.execute(
             "DELETE FROM runs WHERE run_id = ?", (run_id,)
@@ -237,13 +245,14 @@ def add_finding(
     severity: str,
     confidence: float,
     detail: str,
+    signature: str = "",
 ) -> None:
     """Append a finding (e.g. from the LLM judge) and fold it into the verdict."""
     con = connect(db_path)
     with con:
         con.execute(
-            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?)",
-            (run_id, seq, label, severity, confidence, detail),
+            "INSERT INTO findings VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (run_id, seq, label, severity, confidence, detail, signature or label),
         )
         row = con.execute("SELECT verdict, labels FROM runs WHERE run_id = ?", (run_id,)).fetchone()
         if row:
@@ -263,6 +272,7 @@ def reliability_summary(db_path: Path | str) -> list[dict]:
     histogram, answer stability, cost — the reliability.py report shape, but
     over everything already in the db, grouped by task."""
     runs = list_runs(db_path)
+    trends = reliability_trend(db_path)
 
     con = connect(db_path)
     label_rows = list(
@@ -304,9 +314,101 @@ def reliability_summary(db_path: Path | str) -> list[dict]:
                 "distinct_answers": len(answers),
                 "cost_mean": sum(costs) / len(costs) if costs else None,
                 "total_cost": sum(costs) if costs else 0.0,
+                "trend": trends.get(task, []),
             }
         )
     return sorted(summary, key=lambda s: -s["runs"])
+
+
+def recurrences(db_path: Path | str, run_id: str) -> dict[str, list[dict]]:
+    """For each fail-severity fingerprint in this run: the OTHER runs where the
+    same bug appears. {signature: [{run_id, started_at, verdict}, ...]}"""
+    con = connect(db_path)
+    rows = list(
+        con.execute(
+            """SELECT DISTINCT f1.signature AS signature, f2.run_id AS run_id,
+                      r.started_at AS started_at, r.verdict AS verdict
+               FROM findings f1
+               JOIN findings f2 ON f2.signature = f1.signature
+               JOIN runs r ON r.run_id = f2.run_id
+               WHERE f1.run_id = ? AND f2.run_id != ?
+                 AND f1.severity = 'fail' AND f1.signature != ''""",
+            (run_id, run_id),
+        )
+    )
+    con.close()
+    result: dict[str, list[dict]] = {}
+    for row in rows:
+        result.setdefault(row["signature"], []).append(
+            {"run_id": row["run_id"], "started_at": row["started_at"], "verdict": row["verdict"]}
+        )
+    for matches in result.values():
+        matches.sort(key=lambda m: m["started_at"] or 0)
+    return result
+
+
+def recurring_failures(db_path: Path | str, min_count: int = 2) -> list[dict]:
+    """Bugs that keep coming back: fail-severity fingerprints seen in >= min_count
+    runs, most recurrent first."""
+    con = connect(db_path)
+    rows = list(
+        con.execute(
+            """SELECT f.signature AS signature, f.label AS label, f.detail AS detail,
+                      f.run_id AS run_id, r.started_at AS started_at
+               FROM findings f JOIN runs r ON r.run_id = f.run_id
+               WHERE f.severity = 'fail' AND f.signature != ''"""
+        )
+    )
+    con.close()
+    groups: dict[str, dict] = {}
+    for row in rows:
+        group = groups.setdefault(
+            row["signature"],
+            {"signature": row["signature"], "label": row["label"], "detail": row["detail"],
+             "runs": {}},
+        )
+        group["runs"][row["run_id"]] = row["started_at"] or 0
+    result = []
+    for group in groups.values():
+        if len(group["runs"]) < min_count:
+            continue
+        ordered = sorted(group["runs"].items(), key=lambda kv: kv[1])
+        result.append(
+            {
+                "signature": group["signature"],
+                "label": group["label"],
+                "detail": group["detail"],
+                "count": len(ordered),
+                "run_ids": [run_id for run_id, _ in ordered],
+                "first_seen": ordered[0][1],
+                "last_seen": ordered[-1][1],
+            }
+        )
+    return sorted(result, key=lambda g: (-g["count"], -(g["last_seen"] or 0)))
+
+
+def reliability_trend(db_path: Path | str, bucket: str = "day") -> dict[str, list[dict]]:
+    """Per-task pass rate over time. {task: [{bucket, n, passes, pass_rate}, ...]}"""
+    from datetime import datetime, timezone
+
+    fmt = "%Y-%m-%d %H:00" if bucket == "hour" else "%Y-%m-%d"
+    counts: dict[str, dict[str, list[int]]] = {}
+    for run in list_runs(db_path):
+        ts = run["started_at"]
+        if ts is None:
+            continue
+        key = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(fmt)
+        slot = counts.setdefault(run["task"] or "—", {}).setdefault(key, [0, 0])
+        slot[0] += 1
+        if run["verdict"] == "pass":
+            slot[1] += 1
+    return {
+        task: [
+            {"bucket": key, "n": n, "passes": passes, "pass_rate": passes / n}
+            for key, (n, passes) in sorted(buckets.items())
+        ]
+        for task, buckets in counts.items()
+    }
 
 
 def costs_summary(db_path: Path | str, anomaly_factor: float = 2.0) -> dict:
@@ -370,7 +472,7 @@ def get_findings(db_path: Path | str, run_id: str) -> list[dict]:
     rows = [
         dict(r)
         for r in con.execute(
-            "SELECT seq, label, severity, confidence, detail FROM findings "
+            "SELECT seq, label, severity, confidence, detail, signature FROM findings "
             "WHERE run_id = ? ORDER BY seq",
             (run_id,),
         )

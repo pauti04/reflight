@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  BASE,
   STATIC,
   fetchEvents,
   fetchRun,
@@ -380,6 +381,21 @@ export default function RunView({ id }: { id: string }) {
                       seq {f.seq} · conf {f.confidence.toFixed(2)}
                     </span>
                   </button>
+                  {(f.seen_in?.length ?? 0) > 0 && (
+                    <span className="ml-2 font-mono text-xs text-orange-300">
+                      ↻ same bug in {f.seen_in!.length} other run
+                      {f.seen_in!.length > 1 ? "s" : ""}:{" "}
+                      {f.seen_in!.slice(0, 4).map((id, j) => (
+                        <span key={id}>
+                          {j > 0 && ", "}
+                          <a href={`${BASE}/runs/${id}`} className="underline hover:text-orange-200">
+                            {id}
+                          </a>
+                        </span>
+                      ))}
+                      {f.seen_in!.length > 4 && ` +${f.seen_in!.length - 4} more`}
+                    </span>
+                  )}
                 </li>
               );
             })}

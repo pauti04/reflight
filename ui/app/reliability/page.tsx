@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API, BASE, STATIC, fmtCost, verdictStyle } from "@/lib/api";
+import Link from "next/link";
+import {
+  API,
+  BASE,
+  STATIC,
+  fetchRecurring,
+  fmtCost,
+  fmtTime,
+  verdictStyle,
+  type RecurringFailure,
+} from "@/lib/api";
+
+type TrendPoint = { bucket: string; n: number; passes: number; pass_rate: number };
 
 type TaskReport = {
   task: string;
@@ -13,6 +25,7 @@ type TaskReport = {
   distinct_answers: number;
   cost_mean: number | null;
   total_cost: number;
+  trend?: TrendPoint[];
 };
 
 function Bar({ value, className }: { value: number; className: string }) {
@@ -25,6 +38,7 @@ function Bar({ value, className }: { value: number; className: string }) {
 
 export default function ReliabilityPage() {
   const [reports, setReports] = useState<TaskReport[] | null>(null);
+  const [recurring, setRecurring] = useState<RecurringFailure[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,6 +47,7 @@ export default function ReliabilityPage() {
       .then((r) => r.json())
       .then(setReports)
       .catch((e) => setError(String(e)));
+    fetchRecurring().then(setRecurring).catch(() => setRecurring([]));
   }, []);
 
   if (error) return <p className="font-mono text-red-400">{error}</p>;
@@ -50,6 +65,36 @@ export default function ReliabilityPage() {
       <h1 className="text-lg font-semibold">
         Reliability <span className="text-zinc-500">— consistency by task</span>
       </h1>
+
+      {recurring.length > 0 && (
+        <div className="rounded-lg border border-orange-900/50 bg-orange-950/15 p-4">
+          <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-orange-300">
+            ↻ recurring failures — the same bug, again and again
+          </p>
+          <ul className="space-y-2">
+            {recurring.map((bug) => (
+              <li key={bug.signature} className="text-sm">
+                <span className="mr-2 rounded bg-red-900/70 px-1.5 py-0.5 font-mono text-xs text-red-200">
+                  {bug.label} ×{bug.count}
+                </span>
+                <span className="text-zinc-300">{bug.detail}</span>
+                <span className="ml-2 font-mono text-xs text-zinc-500">
+                  first {fmtTime(bug.first_seen)} ·{" "}
+                  {bug.run_ids.slice(0, 5).map((id, i) => (
+                    <span key={id}>
+                      {i > 0 && ", "}
+                      <Link href={`/runs/${id}`} className="text-orange-400 hover:underline">
+                        {id}
+                      </Link>
+                    </span>
+                  ))}
+                  {bug.run_ids.length > 5 && ` +${bug.run_ids.length - 5}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {reports.map((report) => (
         <div key={report.task} className="rounded-lg border border-zinc-800 p-4">
@@ -92,6 +137,33 @@ export default function ReliabilityPage() {
               </div>
             </div>
           </div>
+
+          {(report.trend?.length ?? 0) > 1 && (
+            <div className="mt-3 flex items-end gap-1">
+              <span className="mr-2 font-mono text-xs text-zinc-600">trend</span>
+              {report.trend!.map((point) => (
+                <div key={point.bucket} className="group relative">
+                  <div
+                    className={`w-8 rounded-sm ${
+                      point.pass_rate >= 0.9
+                        ? "bg-emerald-600"
+                        : point.pass_rate >= 0.5
+                          ? "bg-amber-600"
+                          : "bg-red-700"
+                    }`}
+                    style={{ height: `${8 + point.pass_rate * 28}px` }}
+                  />
+                  <span
+                    className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2
+                               whitespace-nowrap rounded bg-zinc-800 px-1.5 py-0.5 font-mono
+                               text-xs text-zinc-200 group-hover:block"
+                  >
+                    {point.bucket}: {Math.round(point.pass_rate * 100)}% of {point.n}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {Object.keys(report.failure_histogram).length > 0 && (
             <div className="mt-3 space-y-1">

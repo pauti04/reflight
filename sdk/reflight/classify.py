@@ -21,6 +21,9 @@ class Finding:
     confidence: float
     seq: int  # anchoring event
     detail: str
+    # stable fingerprint of "the same bug" — recurrence matching across runs.
+    # Volatile specifics (repeat counts, dollar amounts) are deliberately excluded.
+    signature: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -44,16 +47,34 @@ def classify(events: list[dict], max_output_tokens: int = 20_000) -> list[Findin
     for event in events:
         if event["type"] == "error":
             label = "governor_kill" if event["error_type"] == "GovernorKill" else "crash"
+            if label == "governor_kill":
+                # "budget exceeded: $0.51 …" → kind "budget exceeded"
+                kind = event["message"].split(":")[0].strip()
+                signature = f"governor_kill:{kind}"
+            else:
+                signature = f"crash:{event['error_type']}"
             findings.append(
                 Finding(
-                    label, FAIL, 1.0, event["seq"], f"{event['error_type']}: {event['message']}"
+                    label,
+                    FAIL,
+                    1.0,
+                    event["seq"],
+                    f"{event['error_type']}: {event['message']}",
+                    signature=signature,
                 )
             )
 
     # runaway: never reached a final answer
     if end and end["status"] == "max_turns_exceeded":
         findings.append(
-            Finding("runaway", FAIL, 0.9, end["seq"], "hit the turn limit without finishing")
+            Finding(
+                "runaway",
+                FAIL,
+                0.9,
+                end["seq"],
+                "hit the turn limit without finishing",
+                signature="runaway",
+            )
         )
 
     findings.extend(_loops(tool_calls))
@@ -69,6 +90,7 @@ def classify(events: list[dict], max_output_tokens: int = 20_000) -> list[Findin
                 0.7,
                 end["seq"],
                 f"{end['output_tokens']} output tokens (threshold {max_output_tokens})",
+                signature="cost_blowout",
             )
         )
 
@@ -94,6 +116,7 @@ def _loops(tool_calls: list[dict], threshold: int = 3) -> list[Finding]:
                     streak[-1]["seq"],
                     f"{first['name']}({first['input']}) repeated {len(streak)}× "
                     "with identical arguments",
+                    signature=f"loop:{first['name']}:{first['input_hash']}",
                 )
             )
         streak = [call] if call else []
@@ -122,35 +145,55 @@ _JSON_TYPES = {
 }
 
 
-def _schema_problems(schema: dict | None, tool_input: dict) -> list[str]:
+def _schema_problems(schema: dict | None, tool_input: dict) -> tuple[list[str], list[str]]:
+    """Returns (human messages, stable problem kinds for fingerprinting)."""
     if not schema:
-        return []
-    problems = []
+        return [], []
+    problems, kinds = [], []
     properties = schema.get("properties") or {}
     for field in schema.get("required") or []:
         if field not in tool_input:
             problems.append(f"missing required argument {field!r}")
+            kinds.append(f"missing:{field}")
     for key, value in tool_input.items():
         if properties and key not in properties:
             problems.append(f"unknown argument {key!r}")
+            kinds.append(f"unknown:{key}")
             continue
         expected = _JSON_TYPES.get((properties.get(key) or {}).get("type", ""))
         if expected and not isinstance(value, expected):
             problems.append(f"{key!r} should be {properties[key]['type']}")
-    return problems
+            kinds.append(f"type:{key}")
+    return problems, kinds
 
 
 def _wrong_tool_args(events: list[dict], tool_calls: list[dict]) -> list[Finding]:
     schemas = _tool_schemas(events)
     findings = []
     for call in tool_calls:
-        problems = _schema_problems(schemas.get(call["name"]), call["input"])
+        problems, kinds = _schema_problems(schemas.get(call["name"]), call["input"])
         if problems:
             findings.append(
-                Finding("wrong_tool_args", FAIL, 0.85, call["seq"], "; ".join(problems))
+                Finding(
+                    "wrong_tool_args",
+                    FAIL,
+                    0.85,
+                    call["seq"],
+                    "; ".join(problems),
+                    signature=f"wrong_tool_args:{call['name']}:{'+'.join(sorted(kinds))}",
+                )
             )
         elif call["is_error"] and str(call["result"]).startswith("TypeError"):
-            findings.append(Finding("wrong_tool_args", FAIL, 0.7, call["seq"], call["result"]))
+            findings.append(
+                Finding(
+                    "wrong_tool_args",
+                    FAIL,
+                    0.7,
+                    call["seq"],
+                    call["result"],
+                    signature=f"wrong_tool_args:{call['name']}:typeerror",
+                )
+            )
     return findings
 
 
@@ -160,18 +203,25 @@ def _error_cascades(tool_calls: list[dict], existing: list[Finding]) -> list[Fin
     consecutive = 0
     worst = 0
     anchor = None
+    anchor_name = ""
     for call in tool_calls:
         consecutive = consecutive + 1 if call["is_error"] else 0
         if consecutive > worst:
-            worst, anchor = consecutive, call["seq"]
+            worst, anchor, anchor_name = consecutive, call["seq"], call["name"]
     if worst >= 2:
         findings.append(
             Finding(
-                "tool_error_cascade", FAIL, 0.8, anchor, f"{worst} consecutive tool errors"
+                "tool_error_cascade",
+                FAIL,
+                0.8,
+                anchor,
+                f"{worst} consecutive tool errors",
+                signature=f"tool_error_cascade:{anchor_name}",
             )
         )
     elif errors and not any(f.label == "wrong_tool_args" for f in existing):
         first = errors[0]
+        error_class = str(first["result"]).split(":")[0].strip()
         findings.append(
             Finding(
                 "tool_error",
@@ -179,6 +229,7 @@ def _error_cascades(tool_calls: list[dict], existing: list[Finding]) -> list[Fin
                 0.9,
                 first["seq"],
                 f"{first['name']} errored: {str(first['result'])[:80]}",
+                signature=f"tool_error:{first['name']}:{error_class}",
             )
         )
     return findings

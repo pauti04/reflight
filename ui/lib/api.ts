@@ -12,6 +12,18 @@ export type Finding = {
   severity: "fail" | "warn";
   confidence: number;
   detail: string;
+  signature?: string;
+  seen_in?: string[]; // other runs with the same bug fingerprint
+};
+
+export type RecurringFailure = {
+  signature: string;
+  label: string;
+  detail: string;
+  count: number;
+  run_ids: string[];
+  first_seen: number;
+  last_seen: number;
 };
 
 export type Run = {
@@ -84,6 +96,9 @@ export const fetchDiff = async (a: string, b: string): Promise<Diff> => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const fetchCosts = (): Promise<any> =>
   STATIC ? get("/demo/costs.json") : get("/api/costs");
+
+export const fetchRecurring = (): Promise<RecurringFailure[]> =>
+  STATIC ? get("/demo/recurring.json") : get("/api/recurring");
 
 export type Promoted = { path: string; yaml: string };
 

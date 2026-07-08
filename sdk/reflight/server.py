@@ -34,6 +34,10 @@ def create_app(
         if run is None:
             raise HTTPException(404, f"no run {run_id!r}")
         run["findings"] = store.get_findings(db_path, run_id)
+        matches = store.recurrences(db_path, run_id)
+        for finding in run["findings"]:
+            seen = matches.get(finding.get("signature") or "")
+            finding["seen_in"] = [m["run_id"] for m in seen] if seen else []
         return run
 
     @app.post("/api/runs/{run_id}/promote")
@@ -53,6 +57,10 @@ def create_app(
     @app.get("/api/reliability")
     def get_reliability() -> list[dict]:
         return store.reliability_summary(db_path)
+
+    @app.get("/api/recurring")
+    def get_recurring() -> list[dict]:
+        return store.recurring_failures(db_path)
 
     @app.get("/api/diff")
     def get_diff(a: str, b: str) -> dict:
