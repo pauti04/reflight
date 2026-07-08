@@ -32,7 +32,7 @@ export default function RootLayout({
               read-only demo · pre-recorded runs
             </span>
           )}
-          <nav className="ml-auto flex gap-4 text-sm">
+          <nav className="ml-auto flex items-baseline gap-4 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-zinc-100">
               runs
             </Link>
@@ -42,6 +42,15 @@ export default function RootLayout({
             <Link href="/costs" className="text-zinc-400 hover:text-zinc-100">
               costs
             </Link>
+            <a
+              href="https://github.com/pauti04/reflight"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded border border-zinc-700 px-2 py-0.5 font-mono text-xs
+                         text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              GitHub ↗
+            </a>
           </nav>
         </header>
         <main className="px-6 py-6">{children}</main>

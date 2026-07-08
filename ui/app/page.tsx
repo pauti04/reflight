@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   API,
+  STATIC,
   fetchRuns,
   fmtCost,
   fmtTime,
@@ -14,6 +15,71 @@ import {
 } from "@/lib/api";
 
 type VerdictFilter = "all" | "pass" | "warn" | "fail";
+
+const TOUR_STOPS = [
+  {
+    href: "/runs/flaky-01",
+    title: "An agent stuck in a loop",
+    blurb: "5 identical calls, then a made-up answer — caught and labeled",
+  },
+  {
+    href: "/diff?a=flaky-00&b=flaky-02",
+    title: "Spot the bug in one diff",
+    blurb: "pass vs fail, first divergence highlighted: query vs q",
+  },
+  {
+    href: "/runs/runaway-budget",
+    title: "Runaway killed at $0.50",
+    blurb: "no turn limit — the governor's kill is recorded in the run",
+  },
+  {
+    href: "/reliability",
+    title: "The reliability scoreboard",
+    blurb: "15 runs of one task: 47% pass, failure modes ranked",
+  },
+];
+
+function DemoTour() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    setShow(STATIC && !localStorage.getItem("reflight-tour-dismissed"));
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="mb-5 rounded-lg border border-sky-900/60 bg-sky-950/20 p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <p className="text-sm text-zinc-300">
+          These are <span className="text-zinc-100">real recorded agent runs</span> —
+          every LLM call and tool call, replayable. Four worth a look:
+        </p>
+        <button
+          onClick={() => {
+            localStorage.setItem("reflight-tour-dismissed", "1");
+            setShow(false);
+          }}
+          className="shrink-0 font-mono text-xs text-zinc-500 hover:text-zinc-200"
+        >
+          dismiss ✕
+        </button>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {TOUR_STOPS.map((stop) => (
+          <Link
+            key={stop.href}
+            href={stop.href}
+            className="group rounded-md border border-zinc-800 bg-zinc-900/40 p-3
+                       hover:border-sky-800 hover:bg-zinc-900"
+          >
+            <p className="mb-1 text-sm font-medium text-sky-300 group-hover:text-sky-200">
+              {stop.title} →
+            </p>
+            <p className="text-xs leading-relaxed text-zinc-500">{stop.blurb}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function RunsPage() {
   const [runs, setRuns] = useState<Run[] | null>(null);
@@ -91,6 +157,7 @@ export default function RunsPage() {
 
   return (
     <div>
+      <DemoTour />
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-lg font-semibold">Runs</h1>
         <span className="font-mono text-xs text-zinc-500">
