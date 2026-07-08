@@ -37,6 +37,14 @@ becomes an append-only event log you can:
   our own demo data it discovered that two runaway-cost incidents were the
   same loop bug as three earlier flaky runs — nobody told it that.
 
+"How is this different from LangSmith/Langfuse?" — those observe (hosted
+traces and dashboards); Reflight reproduces. A trace describes what happened;
+a Reflight recording re-executes your actual agent code offline, which is
+what makes failures testable. It's local-first, the recording format is
+documented JSONL anyone can consume, and it composes with existing stacks via
+an OTel exporter. Closest prior art is honestly pytest-vcr, lifted to the
+agent layer.
+
 Everything in the repo runs offline against a scripted model — no API key
 needed to try the demos. Apache-2.0. Feedback very welcome, especially on the
 replay-divergence semantics and what would make you trust promoted tests.

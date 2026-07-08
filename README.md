@@ -3,6 +3,11 @@
 **Flight recorder for AI agents: record every run, replay it deterministically,
 turn failures into regression tests.**
 
+Reflight is *reliability infrastructure*, not a detector or an eval: it makes
+agent behavior reproducible, testable, and governable. Recordings use an
+[open, documented format](docs/format.md) that anything can consume —
+detectors, evals, and observability tools run *on top* of it.
+
 [**Live demo**](https://pauti04.github.io/reflight-demo/) · real recorded runs, replayable in your browser, no install.
 
 ![A recorded agent run: the loop caught, labeled, and frozen on the timeline](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png)
@@ -10,9 +15,6 @@ turn failures into regression tests.**
 *Two runs of the same task, diffed — the passing run sent `query`, the failing run sent `q`. First divergence highlighted:*
 
 ![Run diff: first divergence highlighted at the exact event](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-diff.png)
-
-**▶ [Live demo](https://pauti04.github.io/reflight-demo/)** — the timeline UI
-with pre-recorded runs (flaky fleet, governor kills, diffs), zero install.
 
 Agents are programs whose most important steps are non-deterministic and
 external. When one fails, the failure evaporates — re-running gives you a
@@ -157,6 +159,21 @@ uv run python examples/flaky_agent/regression_demo.py   # fail → promote → f
 uv run python examples/flaky_agent/governor_demo.py     # runaway killed at $0.50
 uv run python examples/flaky_agent/ci_gate.py           # CI reliability gate (add --degrade)
 ```
+
+## Where it sits in your stack
+
+The question everyone asks: "how is this different from what I already use?"
+
+| You already use… | It does | Reflight adds |
+|---|---|---|
+| **LangSmith / Langfuse / Braintrust** | Hosted observability: traces, dashboards, datasets | **Deterministic replay** — their traces describe a run; a Reflight recording can *re-execute* it. Local-first, no SaaS. Composes with them via `reflight otel`. |
+| **pytest-vcr / vcrpy** | Records HTTP for API tests | The same idea *lifted to the agent layer*: tool calls, parallel execution, streaming, divergence detection, failure classification — plus `promote`, which VCR never had. |
+| **Eval harnesses** (capability benchmarks) | "Can the model do X?" | "Does *my agent* still do X, every time, this week?" — consistency over capability, wired into CI as a merge gate. |
+| **Detectors / guardrails** (hallucination checkers, semantic judges) | Judge content in the moment | The substrate they should run on: a detector consuming [recordings](docs/format.md) gets reproducible inputs and can write findings back. Reflight's own judge is one small example. |
+
+Short version: everything else observes or evaluates. Reflight makes runs
+**reproducible** — and everything downstream of reproducibility (regression
+tests, CI gates, recurrence tracking) is what the others can't offer.
 
 ## How replay works (and its honest limits)
 
