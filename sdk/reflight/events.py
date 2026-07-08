@@ -36,12 +36,13 @@ def hash_payload(obj: Any) -> str:
 
 
 class RunLog:
-    def __init__(self, run_dir: Path | str):
+    def __init__(self, run_dir: Path | str, transform: Any = None):
         self.run_dir = Path(run_dir)
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.path = self.run_dir / "events.jsonl"
         self._fh = self.path.open("w", encoding="utf-8")
         self._seq = 0
+        self._transform = transform  # e.g. reflight.redact_patterns(...)
         self._lock = threading.Lock()  # agents may execute tool calls concurrently
 
     @property
@@ -58,6 +59,8 @@ class RunLog:
                 "type": event_type,
                 **payload,
             }
+            if self._transform is not None:
+                event = self._transform(to_jsonable(event))
             self._fh.write(json.dumps(to_jsonable(event), ensure_ascii=False) + "\n")
             self._fh.flush()
             self._seq += 1

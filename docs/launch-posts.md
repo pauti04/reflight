@@ -42,8 +42,12 @@ traces and dashboards); Reflight reproduces. A trace describes what happened;
 a Reflight recording re-executes your actual agent code offline, which is
 what makes failures testable. It's local-first, the recording format is
 documented JSONL anyone can consume, and it composes with existing stacks via
-an OTel exporter. Closest prior art is honestly pytest-vcr, lifted to the
-agent layer.
+an OTel exporter. Closest prior art is pytest-vcr lifted to the agent
+layer — Docker's cagent does cassettes for agents built in its own runtime;
+Reflight instruments your existing Python agent (any loop, LangGraph, MCP)
+and adds the layer cassettes don't have: failure classification,
+promote-to-pytest, recurrence fingerprinting, and a cost governor. It's how
+you build a golden dataset from real failures automatically.
 
 Everything in the repo runs offline against a scripted model — no API key
 needed to try the demos. Apache-2.0. Feedback very welcome, especially on the

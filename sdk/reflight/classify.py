@@ -221,7 +221,11 @@ def _error_cascades(tool_calls: list[dict], existing: list[Finding]) -> list[Fin
         )
     elif errors and not any(f.label == "wrong_tool_args" for f in existing):
         first = errors[0]
-        error_class = str(first["result"]).split(":")[0].strip()
+        error_class = (
+            first["result"].split(":")[0].strip()
+            if isinstance(first["result"], str)
+            else "mcp_error"
+        )
         findings.append(
             Finding(
                 "tool_error",

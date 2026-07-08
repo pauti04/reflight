@@ -204,7 +204,7 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
             {event.name}({JSON.stringify(event.input)})
           </p>
           <p className={event.is_error ? "text-red-300" : "text-zinc-200"}>
-            → {String(event.result)}
+            → {typeof event.result === "string" ? event.result : JSON.stringify(event.result)}
           </p>
         </div>
       )}

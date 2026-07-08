@@ -92,6 +92,13 @@ session.end(final_text=answer)
 ```
 
 OpenAI-compatible clients: `client = session.wrap_openai(OpenAI())`.
+MCP tool calls: `mcp = session.wrap_mcp(mcp_client_session)` — recorded and
+replayed on the same timeline as everything else (async).
+
+Recordings contain no API keys by construction (arguments are recorded, not
+HTTP headers). For secrets that flow through *tool data*, pass
+`redact=reflight.redact_patterns(r"sk-\w+")` — masked before disk, hash
+fields preserved so the recording stays replayable.
 
 **LangGraph / LangChain** agents instrument without code changes:
 
@@ -114,6 +121,10 @@ client = session.wrap()
 ```
 
 ### Every failure becomes a regression test
+
+This is how you build a **golden dataset from real failures, automatically** —
+the thing every 2026 eval-methodology guide says reliable agent teams need,
+assembled one `promote` at a time instead of hand-curated.
 
 ```bash
 uv run reflight promote my-failed-run       # → agent_tests/my-failed-run.yaml
@@ -170,6 +181,9 @@ The question everyone asks: "how is this different from what I already use?"
 | **pytest-vcr / vcrpy** | Records HTTP for API tests | The same idea *lifted to the agent layer*: tool calls, parallel execution, streaming, divergence detection, failure classification — plus `promote`, which VCR never had. |
 | **Eval harnesses** (capability benchmarks) | "Can the model do X?" | "Does *my agent* still do X, every time, this week?" — consistency over capability, wired into CI as a merge gate. |
 | **Detectors / guardrails** (hallucination checkers, semantic judges) | Judge content in the moment | The substrate they should run on: a detector consuming [recordings](docs/format.md) gets reproducible inputs and can write findings back. Reflight's own judge is one small example. |
+| **Docker cagent** | VCR cassettes for agents built in *its* runtime | Reflight instruments **your existing Python agent** — any loop, any framework — and adds everything downstream of the cassette: classification, promote→pytest, fingerprinting, fork, governor. |
+| **Laminar** | Hosted replay-from-a-step in their UI | The same debugging move, local-first: `reflight.fork(run, at_seq=N)` — plus the recording is a file you own, not a SaaS row. |
+| **MCP recorders** (mcp-recorder, Agent VCR) | Record/replay one MCP server's wire protocol | `session.wrap_mcp(...)` records MCP tool calls *inside the whole agent recording* — one timeline for LLM calls, local tools, and MCP together. |
 
 Short version: everything else observes or evaluates. Reflight makes runs
 **reproducible** — and everything downstream of reproducibility (regression

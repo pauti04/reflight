@@ -94,6 +94,18 @@ interventions.
 - **Stability**: `schema: 1` fields are stable; additions are
   backward-compatible extras (consumers must tolerate unknown fields).
 
+## Are recordings safe to commit?
+
+Mostly yes, with one honest caveat. Reflight records the *arguments* your
+agent passes (messages, tools, inputs) and provider *responses* — never HTTP
+headers, so API keys don't land in recordings by construction. What CAN land
+there is anything your tools touch: file contents, database rows, customer
+data. For those, register a redaction transform at record time
+(`redact=reflight.redact_patterns(...)`) — it masks matches in every event
+before it's written, while preserving hash fields so the recording remains
+replayable. Redaction is one-way: if your agent's behavior depended on a
+redacted value, replay serves the mask.
+
 ## Consuming recordings from your own tools
 
 Everything downstream of the recorder is ~200 lines you could rewrite in an

@@ -147,6 +147,11 @@ class Replayer:
         del client
         return _WrappedClient(self)
 
+    def wrap_mcp(self, mcp_session: Any = None) -> "_ReplayMCP":
+        """MCP facade served entirely from the recording (async, no server)."""
+        del mcp_session
+        return _ReplayMCP(self)
+
     def wrap_openai(self, client: Any = None) -> _WrappedOpenAIClient:
         """Accepts and ignores a client: replay never touches the network."""
         del client
@@ -329,3 +334,14 @@ class Replayer:
             print(f"  → {preview}")
         if sys.stdin.isatty():
             input("  [Enter] next step ")
+
+
+class _ReplayMCP:
+    def __init__(self, session: "Replayer"):
+        self._session = session
+
+    async def call_tool(self, name: str, arguments: dict | None = None) -> Any:
+        result, is_error = self._session.execute(name, dict(arguments or {}), "mcp")
+        if is_error and isinstance(result, str):
+            raise _reconstruct_error(result)  # recorded transport failure
+        return _view(result)  # isError results are data the agent saw, not exceptions

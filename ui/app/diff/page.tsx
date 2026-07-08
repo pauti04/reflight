@@ -22,7 +22,7 @@ function summarize(event: AgentEvent | undefined): string {
     case "tool_call":
       return `${event.is_error ? "⚠ " : ""}${event.name}(${JSON.stringify(
         event.input,
-      )}) → ${String(event.result).slice(0, 40)}`;
+      )}) → ${(typeof event.result === "string" ? event.result : JSON.stringify(event.result)).slice(0, 40)}`;
     case "run_end":
       return `run_end: ${event.status} — "${(event.final_text ?? "").slice(0, 50)}"`;
     default:

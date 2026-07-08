@@ -98,8 +98,9 @@ class Recorder:
         db_path: Path | str | None = None,
         governor: Any = None,
         agent_name: str | None = None,
+        redact: Any = None,
     ):
-        self.log = RunLog(run_dir)
+        self.log = RunLog(run_dir, transform=redact)
         self._live = live_client
         self._openai: Any = None
         self._tools = dict(tools or {})
@@ -123,6 +124,10 @@ class Recorder:
             client = client()
         self._live = client
         return _WrappedClient(self)
+
+    def wrap_mcp(self, mcp_session: Any) -> "_RecordingMCP":
+        """Wrap an MCP ClientSession so call_tool() is recorded (async)."""
+        return _RecordingMCP(self, mcp_session)
 
     def wrap_openai(self, client: Any) -> _WrappedOpenAIClient:
         """Wrap an OpenAI-compatible client so chat.completions.create is recorded."""
@@ -309,3 +314,79 @@ class Recorder:
         """Dispatcher-style tool execution: errors come back as (message, True)."""
         result, is_error, _ = self._run_tool(name, tool_input, tool_use_id)
         return result, is_error
+
+
+class _RecordingMCP:
+    """Async facade over an MCP ClientSession: call_tool is recorded as a
+    tool_call event (provider="mcp"); everything else passes through."""
+
+    def __init__(self, session: "Recorder", mcp_session: Any):
+        self._session = session
+        self._mcp = mcp_session
+
+    async def call_tool(self, name: str, arguments: dict | None = None) -> Any:
+        return await self._session._mcp_call_tool(self._mcp, name, dict(arguments or {}))
+
+    def __getattr__(self, attr: str) -> Any:
+        return getattr(self._mcp, attr)
+
+
+async def _mcp_call_tool(self: Recorder, mcp: Any, name: str, arguments: dict) -> Any:
+    input_hash = hash_payload(to_jsonable(arguments))
+    cached = None
+    if self._governor is not None:
+        from .governor import GovernorKill
+
+        try:
+            cached = self._governor.before_tool(name, input_hash)
+        except GovernorKill as kill:
+            self._kill(kill)
+            raise
+    if cached is not None:
+        result_data, is_error = cached
+        self.log.emit(
+            "tool_call",
+            name=name,
+            input=to_jsonable(arguments),
+            input_hash=input_hash,
+            tool_use_id=f"mcp_{self.log.seq}",
+            result=result_data,
+            is_error=is_error,
+            provider="mcp",
+            cached=True,
+        )
+        from .replayer import _view
+
+        return _view(result_data)
+    try:
+        result = await mcp.call_tool(name, arguments)
+    except Exception as exc:  # transport/protocol failure — recorded, re-raised
+        self.log.emit(
+            "tool_call",
+            name=name,
+            input=to_jsonable(arguments),
+            input_hash=input_hash,
+            tool_use_id=f"mcp_{self.log.seq}",
+            result=f"{type(exc).__name__}: {exc}",
+            is_error=True,
+            provider="mcp",
+        )
+        raise
+    result_data = to_jsonable(result)
+    is_error = bool(result_data.get("isError")) if isinstance(result_data, dict) else False
+    if self._governor is not None:
+        self._governor.after_tool(name, input_hash, result_data, is_error)
+    self.log.emit(
+        "tool_call",
+        name=name,
+        input=to_jsonable(arguments),
+        input_hash=input_hash,
+        tool_use_id=f"mcp_{self.log.seq}",
+        result=result_data,
+        is_error=is_error,
+        provider="mcp",
+    )
+    return result
+
+
+Recorder._mcp_call_tool = _mcp_call_tool
