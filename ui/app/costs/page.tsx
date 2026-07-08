@@ -72,7 +72,7 @@ export default function CostsPage() {
       {costs.anomalies.length > 0 && (
         <div className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3">
           <p className="mb-2 font-mono text-xs font-semibold text-amber-300">
-            ⚠ {costs.anomalies.length} cost anomal{costs.anomalies.length > 1 ? "ies" : "y"}
+            {costs.anomalies.length} cost anomal{costs.anomalies.length > 1 ? "ies" : "y"} — spend far above the task median
           </p>
           <ul className="space-y-1 text-sm">
             {costs.anomalies.map((a) => (

@@ -75,7 +75,7 @@ export default function RootLayout({
                          text-zinc-200 transition-colors hover:border-orange-700
                          hover:bg-orange-950/40 hover:text-orange-200"
             >
-              GitHub ↗
+              GitHub
             </a>
           </nav>
         </header>

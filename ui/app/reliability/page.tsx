@@ -69,7 +69,7 @@ export default function ReliabilityPage() {
       {recurring.length > 0 && (
         <div className="rounded-lg border border-orange-900/50 bg-orange-950/15 p-4">
           <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-orange-300">
-            ↻ recurring failures — the same bug, again and again
+            recurring failures — the same bug, again and again
           </p>
           <ul className="space-y-2">
             {recurring.map((bug) => (

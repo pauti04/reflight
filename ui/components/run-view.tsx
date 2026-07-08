@@ -105,7 +105,7 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
           className="absolute right-2 top-2 rounded border border-zinc-700 px-2 py-0.5
                      font-mono text-zinc-400 hover:bg-zinc-800"
         >
-          {copied ? "copied ✓" : "copy"}
+          {copied ? "copied" : "copy"}
         </button>
       </div>
     </details>
@@ -167,7 +167,7 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
         </span>
         {failure && (
           <span className="rounded bg-red-900/60 px-2 py-0.5 text-xs font-mono text-red-300">
-            ⚠ failure
+            FAIL
           </span>
         )}
         {row.cost_usd != null && (
@@ -325,7 +325,7 @@ export default function RunView({ id }: { id: string }) {
                        font-mono text-xs text-orange-300 enabled:hover:bg-orange-900/60
                        disabled:opacity-50"
           >
-            {promoted ? "promoted ✓" : promoting ? "promoting…" : "⚡ promote to test"}
+            {promoted ? "promoted" : promoting ? "promoting…" : "promote to test"}
           </button>
         )}
       </div>
@@ -336,7 +336,7 @@ export default function RunView({ id }: { id: string }) {
       {promoted && (
         <div className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
           <p className="mb-2 font-mono text-xs font-semibold text-orange-300">
-            ✓ regression test written → {promoted.path}
+            regression test written: {promoted.path}
           </p>
           <p className="mb-2 text-xs text-zinc-400">
             Edit the assertions to state what SHOULD happen — then it runs in
@@ -351,7 +351,7 @@ export default function RunView({ id }: { id: string }) {
       {(run.findings?.length ?? 0) > 0 && (
         <div className="mb-5 rounded-lg border border-red-900/60 bg-red-950/30 p-3">
           <p className="mb-2 font-mono text-xs font-semibold text-red-300">
-            ⚠ {run.findings!.length} finding{run.findings!.length > 1 ? "s" : ""}
+            {run.findings!.length} finding{run.findings!.length > 1 ? "s" : ""}
           </p>
           <ul className="space-y-1">
             {run.findings!.map((f, i) => {
@@ -383,7 +383,7 @@ export default function RunView({ id }: { id: string }) {
                   </button>
                   {(f.seen_in?.length ?? 0) > 0 && (
                     <span className="ml-2 font-mono text-xs text-orange-300">
-                      ↻ same bug in {f.seen_in!.length} other run
+                      seen again — same bug in {f.seen_in!.length} other run
                       {f.seen_in!.length > 1 ? "s" : ""}:{" "}
                       {f.seen_in!.slice(0, 4).map((id, j) => (
                         <span key={id}>
@@ -406,7 +406,7 @@ export default function RunView({ id }: { id: string }) {
       {run.promoted_yaml && (
         <details className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
           <summary className="cursor-pointer font-mono text-xs font-semibold text-orange-300">
-            ⚡ this failure is one command from being a regression test —
+            PROMOTE — this failure is one command from being a regression test.
             `reflight promote {run.run_id}` writes:
           </summary>
           <pre className="mt-2 max-h-64 overflow-auto rounded bg-zinc-900 p-3 text-xs text-zinc-300">
@@ -428,7 +428,7 @@ export default function RunView({ id }: { id: string }) {
           className="mr-2 rounded border border-orange-800 bg-orange-950/60 px-3 py-0.5
                      font-mono text-xs text-orange-300 hover:bg-orange-900/60"
         >
-          {playing ? "⏸ pause" : "▶ replay"}
+          {playing ? "PAUSE" : "REPLAY"}
         </button>
         {(
           [
@@ -484,7 +484,6 @@ export default function RunView({ id }: { id: string }) {
                   </span>
                   <span className="w-28 shrink-0 font-mono text-xs text-zinc-400">
                     {event.type}
-                    {failure && <span className="ml-1 text-red-400">⚠</span>}
                   </span>
                   <span className="truncate text-zinc-300">
                     {summarize(event)}

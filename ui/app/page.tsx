@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import FdrPanel from "@/components/fdr-panel";
 import {
   API,
   STATIC,
@@ -45,34 +46,38 @@ function Landing() {
   if (!STATIC) return null;
   return (
     <div className="mb-10">
-      <div className="py-8">
-        <h1 className="max-w-2xl text-3xl font-bold leading-tight text-zinc-50">
-          Your agent failed at 2 a.m.
-          <br />
-          <span className="text-orange-400">By morning, the failure was gone.</span>
-        </h1>
-        <p className="mt-4 max-w-2xl text-zinc-400">
-          Reflight records every run an agent makes, replays any of them
-          deterministically, and turns the failures into regression tests.
-          Everything below is a <span className="text-zinc-200">real recorded run</span> —
-          click around, nothing here is mocked.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            href="/runs/flaky-01"
-            className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white
-                       transition-colors hover:bg-orange-500"
-          >
-            ▶ watch a failure replay
-          </Link>
-          <Link
-            href="/diff?a=flaky-00&b=flaky-02"
-            className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200
-                       transition-colors hover:border-orange-700 hover:text-orange-200"
-          >
-            spot a bug in one diff
-          </Link>
+      <div className="grid grid-cols-1 items-center gap-8 py-8 lg:grid-cols-2">
+        <div>
+          <h1 className="text-3xl font-bold leading-tight text-zinc-50">
+            Your agent failed at 2 a.m.
+            <br />
+            <span className="text-orange-400">By morning, the failure was gone.</span>
+          </h1>
+          <p className="mt-4 text-zinc-400">
+            Reflight records every run an agent makes, replays any of them
+            deterministically, and turns the failures into regression tests.
+            The panel on the right is a{" "}
+            <span className="text-zinc-200">real recording, replaying now</span> —
+            an agent stuck in a loop, caught and labeled. Nothing here is mocked.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/runs/flaky-01"
+              className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white
+                         transition-colors hover:bg-orange-500"
+            >
+              Step through this failure
+            </Link>
+            <Link
+              href="/diff?a=flaky-00&b=flaky-02"
+              className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200
+                         transition-colors hover:border-orange-700 hover:text-orange-200"
+            >
+              Spot a bug in one diff
+            </Link>
+          </div>
         </div>
+        <FdrPanel />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

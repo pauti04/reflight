@@ -20,7 +20,7 @@ function summarize(event: AgentEvent | undefined): string {
       return `llm → "${text.slice(0, 60)}"`;
     }
     case "tool_call":
-      return `${event.is_error ? "⚠ " : ""}${event.name}(${JSON.stringify(
+      return `${event.is_error ? "ERR " : ""}${event.name}(${JSON.stringify(
         event.input,
       )}) → ${(typeof event.result === "string" ? event.result : JSON.stringify(event.result)).slice(0, 40)}`;
     case "run_end":
