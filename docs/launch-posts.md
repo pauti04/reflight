@@ -37,7 +37,7 @@ Everything in the repo runs offline against a scripted model — no API key
 needed to try the demos. Apache-2.0. Feedback very welcome, especially on the
 replay-divergence semantics and what would make you trust promoted tests.
 
-*(link)*
+https://github.com/pauti04/reflight — hosted demo: https://pauti04.github.io/reflight-demo/
 
 ---
 
@@ -68,7 +68,7 @@ recorded in the run, dashboard flags it at 173× the task median. The flight
 recorder captures its own intervention.
 
 7/ Open source, Apache-2.0, all demos run offline without an API key.
-*(link)* — would love eyes on the replay semantics.
+https://github.com/pauti04/reflight — hosted demo: https://pauti04.github.io/reflight-demo/ — would love eyes on the replay semantics.
 
 ---
 
