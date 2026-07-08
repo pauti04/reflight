@@ -79,7 +79,7 @@ export default function CostsPage() {
               <li key={a.run_id}>
                 <Link
                   href={`/runs/${a.run_id}`}
-                  className="font-mono text-sky-400 hover:underline"
+                  className="font-mono text-orange-400 hover:underline"
                 >
                   {a.run_id}
                 </Link>{" "}

@@ -320,8 +320,8 @@ export default function RunView({ id }: { id: string }) {
           <button
             onClick={onPromote}
             disabled={promoting || promoted !== null}
-            className="ml-auto rounded border border-sky-800 bg-sky-950/60 px-3 py-1
-                       font-mono text-xs text-sky-300 enabled:hover:bg-sky-900/60
+            className="ml-auto rounded border border-orange-800 bg-orange-950/60 px-3 py-1
+                       font-mono text-xs text-orange-300 enabled:hover:bg-orange-900/60
                        disabled:opacity-50"
           >
             {promoted ? "promoted ✓" : promoting ? "promoting…" : "⚡ promote to test"}
@@ -333,8 +333,8 @@ export default function RunView({ id }: { id: string }) {
         <p className="mb-4 font-mono text-xs text-red-400">{promoteError}</p>
       )}
       {promoted && (
-        <div className="mb-5 rounded-lg border border-sky-900/70 bg-sky-950/20 p-3">
-          <p className="mb-2 font-mono text-xs font-semibold text-sky-300">
+        <div className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-orange-300">
             ✓ regression test written → {promoted.path}
           </p>
           <p className="mb-2 text-xs text-zinc-400">
@@ -388,8 +388,8 @@ export default function RunView({ id }: { id: string }) {
       )}
 
       {run.promoted_yaml && (
-        <details className="mb-5 rounded-lg border border-sky-900/70 bg-sky-950/20 p-3">
-          <summary className="cursor-pointer font-mono text-xs font-semibold text-sky-300">
+        <details className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
+          <summary className="cursor-pointer font-mono text-xs font-semibold text-orange-300">
             ⚡ this failure is one command from being a regression test —
             `reflight promote {run.run_id}` writes:
           </summary>
@@ -409,8 +409,8 @@ export default function RunView({ id }: { id: string }) {
             if (!playing && selected >= visible.length - 1) setSelected(0);
             setPlaying((p) => !p);
           }}
-          className="mr-2 rounded border border-emerald-800 bg-emerald-950/60 px-3 py-0.5
-                     font-mono text-xs text-emerald-300 hover:bg-emerald-900/60"
+          className="mr-2 rounded border border-orange-800 bg-orange-950/60 px-3 py-0.5
+                     font-mono text-xs text-orange-300 hover:bg-orange-900/60"
         >
           {playing ? "⏸ pause" : "▶ replay"}
         </button>

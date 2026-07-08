@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"] });
 
 const HERO =
   "https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png";
@@ -35,22 +36,28 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-screen bg-zinc-950 text-zinc-200 font-sans">
-        <header className="border-b border-zinc-800 px-6 py-3 flex items-baseline gap-3">
-          <Link href="/" className="font-mono font-bold text-zinc-50">
-            ⏺ Reflight
+        <header className="border-b border-zinc-800/80 px-6 py-3 flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="rec-dot h-2.5 w-2.5 rounded-full bg-orange-500" />
+            <span
+              className="text-lg font-bold tracking-tight text-zinc-50"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Reflight
+            </span>
           </Link>
-          <span className="text-xs text-zinc-500">
-            flight recorder for AI agents
+          <span className="hidden text-xs text-zinc-500 sm:inline">
+            the flight recorder for AI agents
           </span>
           {process.env.NEXT_PUBLIC_STATIC_DEMO === "1" && (
-            <span className="rounded bg-sky-950/80 px-2 py-0.5 font-mono text-xs text-sky-300">
-              read-only demo · pre-recorded runs
+            <span className="rounded-full border border-orange-900/60 bg-orange-950/40 px-2.5 py-0.5 font-mono text-xs text-orange-300">
+              demo · real recorded runs
             </span>
           )}
-          <nav className="ml-auto flex items-baseline gap-4 text-sm">
+          <nav className="ml-auto flex items-center gap-4 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-zinc-100">
               runs
             </Link>
@@ -64,14 +71,15 @@ export default function RootLayout({
               href="https://github.com/pauti04/reflight"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded border border-zinc-700 px-2 py-0.5 font-mono text-xs
-                         text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+              className="rounded-md border border-zinc-700 px-2.5 py-1 font-mono text-xs
+                         text-zinc-200 transition-colors hover:border-orange-700
+                         hover:bg-orange-950/40 hover:text-orange-200"
             >
               GitHub ↗
             </a>
           </nav>
         </header>
-        <main className="px-6 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
       </body>
     </html>
   );

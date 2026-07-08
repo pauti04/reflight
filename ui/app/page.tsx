@@ -16,66 +16,103 @@ import {
 
 type VerdictFilter = "all" | "pass" | "warn" | "fail";
 
-const TOUR_STOPS = [
+const STEPS = [
   {
-    href: "/runs/flaky-01",
-    title: "An agent stuck in a loop",
-    blurb: "5 identical calls, then a made-up answer — caught and labeled",
+    n: "01",
+    title: "Record",
+    body: "Wrap your LLM client and tools — 3 added lines. Every call, token, and dollar becomes an append-only event log.",
   },
   {
-    href: "/diff?a=flaky-00&b=flaky-02",
-    title: "Spot the bug in one diff",
-    blurb: "pass vs fail, first divergence highlighted: query vs q",
+    n: "02",
+    title: "Replay",
+    body: "Re-run any recording offline: byte-identical, milliseconds, $0.00. Failures finally reproduce.",
   },
   {
-    href: "/runs/runaway-budget",
-    title: "Runaway killed at $0.50",
-    blurb: "no turn limit — the governor's kill is recorded in the run",
-  },
-  {
-    href: "/reliability",
-    title: "The reliability scoreboard",
-    blurb: "15 runs of one task: 47% pass, failure modes ranked",
+    n: "03",
+    title: "Test",
+    body: "One command turns a recorded failure into a pytest regression test. CI keeps it fixed forever.",
   },
 ];
 
-function DemoTour() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    setShow(STATIC && !localStorage.getItem("reflight-tour-dismissed"));
-  }, []);
-  if (!show) return null;
+const BUG_TRAIL = [
+  { href: "/reliability", label: "15 runs, 47% pass", sub: "the scoreboard" },
+  { href: "/runs/flaky-02", label: "one run fails", sub: "wrong tool args" },
+  { href: "/diff?a=flaky-00&b=flaky-02", label: "the diff shows why", sub: '"q" vs "query"' },
+  { href: "/runs/runaway-budget", label: "runaway killed at $0.50", sub: "the governor" },
+];
+
+function Landing() {
+  if (!STATIC) return null;
   return (
-    <div className="mb-5 rounded-lg border border-sky-900/60 bg-sky-950/20 p-4">
-      <div className="mb-3 flex items-baseline justify-between gap-4">
-        <p className="text-sm text-zinc-300">
-          These are <span className="text-zinc-100">real recorded agent runs</span> —
-          every LLM call and tool call, replayable. Four worth a look:
+    <div className="mb-10">
+      <div className="py-8">
+        <h1 className="max-w-2xl text-3xl font-bold leading-tight text-zinc-50">
+          Your agent failed at 2 a.m.
+          <br />
+          <span className="text-orange-400">By morning, the failure was gone.</span>
+        </h1>
+        <p className="mt-4 max-w-2xl text-zinc-400">
+          Reflight records every run an agent makes, replays any of them
+          deterministically, and turns the failures into regression tests.
+          Everything below is a <span className="text-zinc-200">real recorded run</span> —
+          click around, nothing here is mocked.
         </p>
-        <button
-          onClick={() => {
-            localStorage.setItem("reflight-tour-dismissed", "1");
-            setShow(false);
-          }}
-          className="shrink-0 font-mono text-xs text-zinc-500 hover:text-zinc-200"
-        >
-          dismiss ✕
-        </button>
-      </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {TOUR_STOPS.map((stop) => (
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link
-            key={stop.href}
-            href={stop.href}
-            className="group rounded-md border border-zinc-800 bg-zinc-900/40 p-3
-                       hover:border-sky-800 hover:bg-zinc-900"
+            href="/runs/flaky-01"
+            className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white
+                       transition-colors hover:bg-orange-500"
           >
-            <p className="mb-1 text-sm font-medium text-sky-300 group-hover:text-sky-200">
-              {stop.title} →
-            </p>
-            <p className="text-xs leading-relaxed text-zinc-500">{stop.blurb}</p>
+            ▶ watch a failure replay
           </Link>
+          <Link
+            href="/diff?a=flaky-00&b=flaky-02"
+            className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200
+                       transition-colors hover:border-orange-700 hover:text-orange-200"
+          >
+            spot a bug in one diff
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {STEPS.map((step) => (
+          <div key={step.n} className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="font-mono text-xs text-orange-500">{step.n}</span>
+              <span
+                className="text-base font-semibold text-zinc-100"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {step.title}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-zinc-500">{step.body}</p>
+          </div>
         ))}
+      </div>
+
+      <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+        <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          follow one bug through the system
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {BUG_TRAIL.map((stop, i) => (
+            <span key={stop.href} className="flex items-center gap-2">
+              <Link
+                href={stop.href}
+                className="group rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2
+                           transition-colors hover:border-orange-800"
+              >
+                <span className="block text-sm text-zinc-200 group-hover:text-orange-200">
+                  {stop.label}
+                </span>
+                <span className="block font-mono text-xs text-zinc-600">{stop.sub}</span>
+              </Link>
+              {i < BUG_TRAIL.length - 1 && <span className="text-zinc-700">→</span>}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -157,7 +194,7 @@ export default function RunsPage() {
 
   return (
     <div>
-      <DemoTour />
+      <Landing />
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-lg font-semibold">Runs</h1>
         <span className="font-mono text-xs text-zinc-500">
@@ -222,13 +259,13 @@ export default function RunsPage() {
                     type="checkbox"
                     checked={picked.includes(run.run_id)}
                     onChange={() => toggle(run.run_id)}
-                    className="accent-sky-500"
+                    className="accent-orange-500"
                   />
                 </td>
                 <td className="px-4 py-2 font-mono">
                   <Link
                     href={`/runs/${run.run_id}`}
-                    className="text-sky-400 hover:underline"
+                    className="text-orange-400 hover:text-orange-300 hover:underline"
                   >
                     {run.run_id}
                   </Link>

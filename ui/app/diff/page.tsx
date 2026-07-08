@@ -43,7 +43,7 @@ function Column({
 }) {
   return (
     <div>
-      <h2 className="mb-2 font-mono text-sm text-sky-400">
+      <h2 className="mb-2 font-mono text-sm text-orange-400">
         <Link href={`/runs/${title}`} className="hover:underline">
           {title}
         </Link>
