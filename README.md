@@ -3,6 +3,14 @@
 **Flight recorder for AI agents: record every run, replay it deterministically,
 turn failures into regression tests.**
 
+[**Live demo**](https://pauti04.github.io/reflight-demo/) · real recorded runs, replayable in your browser, no install.
+
+![A recorded agent run: the loop caught, labeled, and frozen on the timeline](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png)
+
+*Two runs of the same task, diffed — the passing run sent `query`, the failing run sent `q`. First divergence highlighted:*
+
+![Run diff: first divergence highlighted at the exact event](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-diff.png)
+
 **▶ [Live demo](https://pauti04.github.io/reflight-demo/)** — the timeline UI
 with pre-recorded runs (flaky fleet, governor kills, diffs), zero install.
 
