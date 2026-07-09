@@ -36,7 +36,7 @@ const STEPS = [
 ];
 
 const BUG_TRAIL = [
-  { href: "/reliability", label: "10 runs, 30% pass", sub: "one support task" },
+  { href: "/reliability", label: "3 agents, 19 runs", sub: "the scoreboard" },
   {
     href: "/runs/refund-01",
     label: "the refund API rejects every call",
@@ -83,7 +83,7 @@ function Landing() {
               Step through this failure
             </Link>
             <Link
-              href="/diff?a=flaky-00&b=flaky-02"
+              href="/diff?a=refund-00&b=refund-01"
               className="rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200
                          transition-colors hover:border-orange-700 hover:text-orange-200"
             >

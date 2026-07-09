@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from refund_model import TASK, RefundAnthropic
+from refund_model import MODES, RefundAnthropic, task_for
 from tools import TOOL_SPECS, make_tools
 
 import reflight
@@ -60,24 +60,26 @@ def run_agent(session, task: str) -> tuple[str | None, str]:
 
 
 def main() -> int:
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 9
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else len(MODES)
     for seed in range(n):
+        task = task_for(seed)
         run_dir = RUNS_DIR / f"refund-{seed:02d}"
         session = reflight.record(
             run_dir,
-            task=TASK,
+            task=task,
             client=RefundAnthropic(seed),
-            tools=make_tools(pending=seed % 3 == 2),
+            tools=make_tools(pending=MODES[seed % len(MODES)] == "pending"),
             db_path=DB,
             agent_name="refund-agent",
         )
-        run_agent(session, TASK)
+        run_agent(session, task)
 
     # the runaway: gateway stuck on PENDING, no turn limit, $2 budget
+    task = task_for(0)
     run_dir = RUNS_DIR / "refund-runaway"
     session = reflight.record(
         run_dir,
-        task=TASK,
+        task=task,
         client=RefundAnthropic(2, endless=True),
         tools=make_tools(pending=True),
         db_path=DB,
@@ -85,7 +87,7 @@ def main() -> int:
         agent_name="refund-agent",
     )
     try:
-        messages: list[dict] = [{"role": "user", "content": TASK}]
+        messages: list[dict] = [{"role": "user", "content": task}]
         while True:  # no turn limit — only the governor stands in the way
             response = session.messages.create(
                 model="claude-sonnet-5",

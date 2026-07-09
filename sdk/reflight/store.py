@@ -277,19 +277,22 @@ def reliability_summary(db_path: Path | str) -> list[dict]:
     con = connect(db_path)
     label_rows = list(
         con.execute(
-            "SELECT r.task AS task, f.label AS label FROM findings f "
+            "SELECT r.task AS task, r.agent AS agent, f.label AS label FROM findings f "
             "JOIN runs r ON r.run_id = f.run_id"
         )
     )
     con.close()
     histograms: dict[str, dict[str, int]] = {}
     for row in label_rows:
-        task_hist = histograms.setdefault(row["task"] or "—", {})
+        key = row["agent"] or row["task"] or "—"
+        task_hist = histograms.setdefault(key, {})
         task_hist[row["label"]] = task_hist.get(row["label"], 0) + 1
 
+    # group by agent when set (a fleet runs many task variants of one agent),
+    # else by task — keeps single-agent and legacy data grouping unchanged
     groups: dict[str, list[dict]] = {}
     for run in runs:
-        groups.setdefault(run["task"] or "—", []).append(run)
+        groups.setdefault(run.get("agent") or run["task"] or "—", []).append(run)
 
     summary = []
     for task, group in groups.items():
@@ -398,7 +401,8 @@ def reliability_trend(db_path: Path | str, bucket: str = "day") -> dict[str, lis
         if ts is None:
             continue
         key = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(fmt)
-        slot = counts.setdefault(run["task"] or "—", {}).setdefault(key, [0, 0])
+        group = run.get("agent") or run["task"] or "—"
+        slot = counts.setdefault(group, {}).setdefault(key, [0, 0])
         slot[0] += 1
         if run["verdict"] == "pass":
             slot[1] += 1

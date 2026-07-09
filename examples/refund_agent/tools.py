@@ -51,20 +51,36 @@ TOOL_SPECS = [
     },
 ]
 
-_ORDER = {
-    "order_id": "ORD-7351",
-    "customer_id": "CUST-4816",
-    "status": "delivered",
-    "total_usd": 49.99,
-    "items": [{"sku": "MUG-STONE-11", "name": "Stoneware mug, set of 2", "qty": 1}],
+_ORDERS = {
+    "ORD-7351": {
+        "order_id": "ORD-7351",
+        "customer_id": "CUST-4816",
+        "status": "delivered",
+        "total_usd": 49.99,
+        "items": [{"sku": "MUG-STONE-11", "name": "Stoneware mug, set of 2", "qty": 1}],
+    },
+    "ORD-8102": {
+        "order_id": "ORD-8102",
+        "customer_id": "CUST-2210",
+        "status": "delivered",
+        "total_usd": 129.00,
+        "items": [{"sku": "GRND-ESP-02", "name": "Conical burr espresso grinder", "qty": 1}],
+    },
+    "ORD-6644": {
+        "order_id": "ORD-6644",
+        "customer_id": "CUST-9034",
+        "status": "delivered",
+        "total_usd": 18.50,
+        "items": [{"sku": "TWL-LIN-04", "name": "Linen tea towels, set of 4", "qty": 1}],
+    },
 }
 
 
 def make_tools(pending: bool = False) -> dict:
     def lookup_order(order_id: str) -> str:
-        if order_id != _ORDER["order_id"]:
+        if order_id not in _ORDERS:
             raise ValueError(f"no such order: {order_id}")
-        return json.dumps(_ORDER)
+        return json.dumps(_ORDERS[order_id])
 
     def refund_policy(reason: str) -> str:
         del reason
@@ -80,11 +96,12 @@ def make_tools(pending: bool = False) -> dict:
                 f"amount_usd must be a number, got {type(amount_usd).__name__} "
                 f"{amount_usd!r}"
             )
-        if order_id != _ORDER["order_id"]:
+        if order_id not in _ORDERS:
             raise ValueError(f"no such order: {order_id}")
-        if amount_usd > _ORDER["total_usd"]:
+        if amount_usd > _ORDERS[order_id]["total_usd"]:
             raise ValueError(
-                f"refund ${amount_usd:.2f} exceeds order total ${_ORDER['total_usd']:.2f}"
+                f"refund ${amount_usd:.2f} exceeds order total "
+                f"${_ORDERS[order_id]['total_usd']:.2f}"
             )
         if pending:
             return json.dumps(
