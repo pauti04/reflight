@@ -16,6 +16,10 @@ The recordings, the judge whose catch rate swung from 5/5 to 1/5 on
 identical failures, and the 15-line assertion that caught every one:
 [the case study](docs/case-study.md).
 
+*A real recording, replaying: a support agent sends the refund amount as a string, retries the same broken call, and gets caught —*
+
+![The flight recorder replaying a recorded failure: the agent retries a malformed refund call until the classifier labels it](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/fdr-panel.gif)
+
 ![A recorded agent run: the loop caught, labeled, and frozen on the timeline](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png)
 
 *Two runs of the same task, diffed — the passing run sent `query`, the failing run sent `q`. First divergence highlighted:*
