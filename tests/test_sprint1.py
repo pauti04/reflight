@@ -33,6 +33,14 @@ def test_pricing_unknown_model_is_none():
     assert pricing.cost_usd("gpt-things", {"input_tokens": 5}) is None
 
 
+def test_pricing_openai_usage_keys_and_longest_prefix():
+    # openai usage blocks say prompt/completion, and gpt-4o-mini must not
+    # resolve to gpt-4o's prices
+    usage = {"prompt_tokens": 1_000_000, "completion_tokens": 1_000_000}
+    assert pricing.cost_usd("gpt-4o-mini-2024-07-18", usage) == pytest.approx(0.15 + 0.60)
+    assert pricing.cost_usd("gpt-4o", usage) == pytest.approx(2.50 + 10.00)
+
+
 # -- schema --------------------------------------------------------------------
 
 

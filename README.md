@@ -10,6 +10,12 @@ detectors, evals, and observability tools run *on top* of it.
 
 [**Live demo**](https://pauti04.github.io/reflight-demo/) · real recorded runs, replayable in your browser, no install.
 
+**New: a real one.** Fifteen live runs of a gpt-4o-mini scheduling agent
+all passed every tool-level check — and all booked the meeting on a Sunday.
+The recordings, the judge whose catch rate swung from 5/5 to 1/5 on
+identical failures, and the 15-line assertion that caught every one:
+[the case study](docs/case-study.md).
+
 ![A recorded agent run: the loop caught, labeled, and frozen on the timeline](https://raw.githubusercontent.com/pauti04/reflight/main/docs/assets/hero-run.png)
 
 *Two runs of the same task, diffed — the passing run sent `query`, the failing run sent `q`. First divergence highlighted:*

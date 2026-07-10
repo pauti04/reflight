@@ -42,6 +42,7 @@ def run_repeated(
     concurrency: int = 4,
     budget_usd: float | None = None,
     db_path: Path | str | None = None,
+    agent_name: str | None = None,
 ) -> dict:
     runs_root = Path(runs_root)
     lock = threading.Lock()
@@ -53,7 +54,10 @@ def run_repeated(
             if budget_usd is not None and spent >= budget_usd:
                 return {"run_id": f"{prefix}-{i:03d}", "skipped": True}
         run_dir = runs_root / f"{prefix}-{i:03d}"
-        session = Recorder(run_dir, client_factory(i), tools_factory(run_dir))
+        session = Recorder(
+            run_dir, client_factory(i), tools_factory(run_dir), agent_name=agent_name
+        )
+        session.start(task)  # idempotent — agents that call start() themselves are fine
         try:
             agent(session, task)
         except Exception as exc:  # a crashed run is still a recorded run
