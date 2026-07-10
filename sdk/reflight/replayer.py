@@ -134,6 +134,10 @@ class Replayer:
 
         start = next((e for e in self._events if e["type"] == "run_start"), None)
         end = next((e for e in self._events if e["type"] == "run_end"), None)
+        self._entropy_event = next(
+            (e for e in self._events if e["type"] == "entropy"), None
+        )
+        self._entropy_cursors: dict | None = None
         self.task: str | None = start["task"] if start else None
         self.recorded_status: str | None = end["status"] if end else None
         self.recorded_final_text: str | None = end["final_text"] if end else None
@@ -190,6 +194,13 @@ class Replayer:
 
     def start(self, task: str) -> None:
         pass  # nothing to record during replay
+
+    def pin(self):
+        """Context manager: serve the recording's time/random/uuid values so
+        entropy-dependent agent code replays deterministically."""
+        from .entropy import ReplayPin
+
+        return ReplayPin(self)
 
     def snapshot(self, label: str, state: Any) -> None:
         event = self._next("state_snapshot")
@@ -288,7 +299,12 @@ class Replayer:
         cursor = self._cursor
         while cursor < len(self._events):
             event = self._events[cursor]
-            if cursor in self._consumed or event["type"] in ("run_start", "run_end", "error"):
+            if cursor in self._consumed or event["type"] in (
+                "run_start",
+                "run_end",
+                "error",
+                "entropy",
+            ):
                 cursor += 1
                 continue
             if event["type"] != "tool_call":
@@ -304,7 +320,7 @@ class Replayer:
             if index in self._consumed:
                 continue
             event = self._events[index]
-            if event["type"] in ("run_start", "run_end", "error"):
+            if event["type"] in ("run_start", "run_end", "error", "entropy"):
                 continue
             if event["type"] != expected_type:
                 raise ReplayDivergence(

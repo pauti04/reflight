@@ -15,6 +15,10 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 
+# bound at import so entropy pinning (which patches time.time) never captures
+# the log's own timestamps
+_now = time.time
+
 
 def to_jsonable(obj: Any) -> Any:
     """Recursively convert pydantic models (e.g. anthropic content blocks) to plain data."""
@@ -55,7 +59,7 @@ class RunLog:
             event = {
                 "seq": self._seq,
                 "schema": SCHEMA_VERSION,
-                "ts": time.time(),
+                "ts": _now(),
                 "type": event_type,
                 **payload,
             }

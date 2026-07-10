@@ -114,6 +114,7 @@ class Recorder:
         self._totals_lock = threading.Lock()
         self._started = False
         self._ended = False
+        self._entropy: dict | None = None
 
     # -- auto-instrumentation --------------------------------------------------
 
@@ -195,6 +196,13 @@ class Recorder:
         self.record_error(kill)
         self.end(status="killed", final_text=None)
 
+    def pin(self):
+        """Context manager: capture time/random/uuid so entropy-dependent
+        agent code replays deterministically. See reflight.entropy."""
+        from .entropy import RecordPin
+
+        return RecordPin(self)
+
     def snapshot(self, label: str, state: Any) -> None:
         """Record a labeled snapshot of agent state (verified on replay)."""
         data = to_jsonable(state)
@@ -207,6 +215,8 @@ class Recorder:
         if self._ended:
             return
         self._ended = True
+        if self._entropy is not None and any(self._entropy.values()):
+            self.log.emit("entropy", **self._entropy)
         self.log.emit(
             "run_end",
             status=status,
@@ -292,8 +302,11 @@ class Recorder:
             if fn is None:
                 result, is_error = f"UnknownTool: no tool named {name!r}", True
             else:
+                from .entropy import tool_scope
+
                 try:
-                    result, is_error = fn(**tool_input), False
+                    with tool_scope():
+                        result, is_error = fn(**tool_input), False
                 except Exception as e:  # tool failures are data to record, not crashes
                     exc, result, is_error = e, f"{type(e).__name__}: {e}", True
             if self._governor is not None:

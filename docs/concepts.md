@@ -22,7 +22,11 @@ agent code is identical in every mode; only the session changes:
 | (governed `Recorder`) | same as Recorder plus budgets, loop breaker, cache |
 
 That symmetry is the whole trick: deterministic replay is possible because
-the world is injected, not reached for.
+the world is injected, not reached for. Entropy the agent-loop code reaches
+for directly — `time.time()`, `random`, `uuid.uuid4()` — can be injected
+too: wrap the loop in `with session.pin():` and those draws are recorded and
+served back identically on replay. The precise boundary of what replay
+covers is mapped in [limits.md](limits.md).
 
 ## Divergence is a feature
 

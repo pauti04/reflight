@@ -21,7 +21,7 @@ Every event carries:
 | `seq` | int | 0-based position, contiguous |
 | `schema` | int | format version (currently `1`) |
 | `ts` | float | unix seconds at emission (= call completion) |
-| `type` | string | one of the six event types below |
+| `type` | string | one of the seven event types below |
 
 ## Event types
 
@@ -74,6 +74,18 @@ Optional agent-state checkpoints, hash-verified on replay.
 ```
 Agent crashes and governor kills. The recording captures its own
 interventions.
+
+### `entropy`
+```json
+{"seq": 5, "type": "entropy", "seeds": ["a1b2c3d4e5f60718"],
+ "time": [1751900000.12, 1751900003.98], "time_ns": [],
+ "uuid": ["0f8a…-…"]}
+```
+Present only when the run used `session.pin()`: the wall-clock values, PRNG
+seeds, and UUIDs the agent-loop code drew, in draw order. Replay's `pin()`
+serves them back so entropy-dependent code takes the recorded path. Emitted
+once, immediately before `run_end`. See [limits.md](limits.md) for what the
+pin does and doesn't cover.
 
 ### `run_end`
 ```json

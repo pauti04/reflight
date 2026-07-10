@@ -200,8 +200,13 @@ path; it is **not** time travel for arbitrary changes — that's what fork mode
 and live re-verification are for. Streaming agents are supported (the
 `messages.stream()` helper pattern replays chunk-identically), and so are
 **parallel tool calls** — replay matches by `tool_use_id`, so any completion
-order replays. Remaining limits (raw stream-event iteration, OpenAI chat
-streaming, volatile prompt content) are tracked in [NOTES.md](NOTES.md).
+order replays. Agent code that consults the clock, PRNG, or `uuid.uuid4()`
+between calls is covered too: wrap the loop in `with session.pin():` and
+those draws are recorded and served back on replay, so timestamped requests
+and generated ids replay exactly. The full honest map of what replay can and
+can't see — including what the pin does *not* cover — is
+[docs/limits.md](docs/limits.md); smaller open items are tracked in
+[NOTES.md](NOTES.md).
 
 Verified against a real API: [examples/live_api_check.py](examples/live_api_check.py)
 records two dependent live calls and replays them byte-identically with the

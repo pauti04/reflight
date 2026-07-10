@@ -96,6 +96,14 @@ class ForkSession:
     def start(self, task: str) -> None:
         self._rec.start(task)
 
+    def pin(self):
+        """Context manager: serve the source recording's entropy through the
+        replayed prefix, capture live entropy after the fork point. Either
+        way the values land in the fork's own recording."""
+        from .entropy import ForkPin
+
+        return ForkPin(self)
+
     def snapshot(self, label: str, state: Any) -> None:
         self._rec.snapshot(label, state)
 
@@ -112,7 +120,7 @@ class ForkSession:
         cursor = self._cursor
         while cursor < len(self._events):
             event = self._events[cursor]
-            if event["type"] in ("run_start", "run_end", "error"):
+            if event["type"] in ("run_start", "run_end", "error", "entropy"):
                 cursor += 1
                 continue
             if event["seq"] >= self.at_seq:

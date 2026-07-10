@@ -14,6 +14,7 @@ REQUIRED_FIELDS: dict[str, set[str]] = {
     "tool_call": {"name", "input", "input_hash", "tool_use_id", "result", "is_error"},
     "state_snapshot": {"label", "state", "state_hash"},
     "error": {"error_type", "message"},
+    "entropy": {"seeds", "time", "time_ns", "uuid"},
     "run_end": {"status", "final_text", "input_tokens", "output_tokens"},
 }
 
