@@ -37,6 +37,17 @@ becomes an append-only event log you can:
   our own demo data it discovered that two runaway-cost incidents were the
   same loop bug as three earlier flaky runs — nobody told it that.
 
+Before launching we ran a live case study: fifteen real gpt-4o-mini runs of
+a scheduling agent, and every single one passed every tool-level check while
+booking "next Wednesday" on a Sunday — the wrong day had an empty calendar,
+so nothing errored. Rule classifiers (correctly) found nothing; an LLM judge
+caught it, but its catch rate swung from 5/5 to 1/5 across identical
+batches; a 15-line assertion over the recordings caught every run. The
+recordings are committed in the repo and replayable offline — the full
+write-up is docs/case-study.md, and docs/limits.md is the honest map of what
+replay can and can't see (including the new entropy pinning: time/random/
+uuid draws are recorded and served back on replay).
+
 "How is this different from LangSmith/Langfuse?" — those observe (hosted
 traces and dashboards); Reflight reproduces. A trace describes what happened;
 a Reflight recording re-executes your actual agent code offline, which is
@@ -84,10 +95,16 @@ recorded in the run, dashboard flags it at 173× the task median. The flight
 recorder captures its own intervention.
 
 6.5/ And because every failure gets a fingerprint, Reflight noticed the
-runaway was the *same bug* as three earlier flaky runs — "↻ same bug in 4
-other runs." Your bug tracker can't do that. Your flight recorder can.
+runaway was the *same bug* as three earlier flaky runs — "same bug in 4
+other runs," linked. Your bug tracker can't do that. Your flight recorder
+can.
 
-7/ Open source, Apache-2.0, all demos run offline without an API key.
+7/ Field test: 15 real gpt-4o-mini runs of a scheduling agent. All 15 passed
+every tool-level check. All 15 booked the meeting on a Sunday. The only
+thing that caught it deterministically: an assertion over the recordings.
+Full write-up + committed recordings in the repo (docs/case-study.md).
+
+8/ Open source, Apache-2.0, all demos run offline without an API key.
 https://github.com/pauti04/reflight — hosted demo: https://pauti04.github.io/reflight-demo/ — would love eyes on the replay semantics.
 
 ---
