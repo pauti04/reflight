@@ -11,6 +11,7 @@ import {
   promoteRun,
   type AgentEvent,
   type EventRow,
+  type Finding,
   type Promoted,
   type Run,
 } from "@/lib/api";
@@ -135,15 +136,21 @@ function summarize(event: AgentEvent): string {
       return event.task ?? "";
     case "llm_call": {
       const blocks = event.response?.content ?? [];
-      const tools = blocks
-        .filter((b: AgentEvent) => b.type === "tool_use")
-        .map((b: AgentEvent) => b.name);
-      if (tools.length) return `→ tool_use: ${tools.join(", ")}`;
+      const tools = blocks.filter((b: AgentEvent) => b.type === "tool_use");
+      if (tools.length)
+        return `→ ${tools
+          .map((b: AgentEvent) => `${b.name}(${JSON.stringify(b.input)})`)
+          .join(", ")}`;
       const text = blocks.find((b: AgentEvent) => b.type === "text")?.text ?? "";
-      return text.slice(0, 90);
+      return text.slice(0, 120);
     }
-    case "tool_call":
-      return `${event.name}(${JSON.stringify(event.input)})`;
+    case "tool_call": {
+      const call = `${event.name}(${JSON.stringify(event.input)})`;
+      if (!event.is_error) return call;
+      // the error head is the interesting part — make sure it survives truncation
+      const head = String(event.result).split(",")[0];
+      return `${call} → ${head}`;
+    }
     case "state_snapshot":
       return event.label ?? "";
     case "error":
@@ -244,7 +251,14 @@ export default function RunView({ id }: { id: string }) {
 
   useEffect(() => {
     fetchRun(id).then(setRun).catch((e) => setError(String(e)));
-    fetchEvents(id).then(setEvents).catch((e) => setError(String(e)));
+    fetchEvents(id)
+      .then((rows) => {
+        setEvents(rows);
+        // land on the first failure — it's why the visitor clicked through
+        const firstFail = rows.findIndex((r) => isFailure(r.event));
+        if (firstFail > 0) setSelected(firstFail);
+      })
+      .catch((e) => setError(String(e)));
   }, [id]);
 
   const onPromote = useCallback(() => {
@@ -354,10 +368,20 @@ export default function RunView({ id }: { id: string }) {
             {run.findings!.length} finding{run.findings!.length > 1 ? "s" : ""}
           </p>
           <ul className="space-y-1">
-            {run.findings!.map((f, i) => {
-              const idx = events.findIndex((r) => r.event.seq === f.seq);
+            {/* one line per distinct bug — the same finding at 3 seqs is one bug, thrice */}
+            {Object.values(
+              run.findings!.reduce<Record<string, { f: Finding; seqs: number[] }>>(
+                (groups, f) => {
+                  const key = `${f.label}|${f.detail}`;
+                  (groups[key] ??= { f, seqs: [] }).seqs.push(f.seq);
+                  return groups;
+                },
+                {},
+              ),
+            ).map(({ f, seqs }) => {
+              const idx = events.findIndex((r) => r.event.seq === seqs[0]);
               return (
-                <li key={i} className="text-sm">
+                <li key={`${f.label}${seqs[0]}`} className="text-sm">
                   <button
                     onClick={() => {
                       if (idx >= 0) {
@@ -375,10 +399,11 @@ export default function RunView({ id }: { id: string }) {
                       }`}
                     >
                       {f.label}
+                      {seqs.length > 1 && ` ×${seqs.length}`}
                     </span>
                     <span className="text-zinc-300">{f.detail}</span>
                     <span className="ml-2 font-mono text-xs text-zinc-500">
-                      seq {f.seq} · conf {f.confidence.toFixed(2)}
+                      seq {seqs.join(", ")} · conf {f.confidence.toFixed(2)}
                     </span>
                   </button>
                   {(f.seen_in?.length ?? 0) > 0 && (

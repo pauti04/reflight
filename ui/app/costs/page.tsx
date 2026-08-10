@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchCosts, fmtCost } from "@/lib/api";
+import { fetchCosts, fmtCost, fmtMoney } from "@/lib/api";
 
 type Group = { key: string; runs: number; total_usd: number; mean_usd: number };
 type Anomaly = {
@@ -21,29 +21,45 @@ type Costs = {
   anomalies: Anomaly[];
 };
 
-function GroupTable({ title, rows }: { title: string; rows: Group[] }) {
+function GroupTable({
+  title,
+  rows,
+  sortByCost = false,
+}: {
+  title: string;
+  rows: Group[];
+  sortByCost?: boolean;
+}) {
   if (!rows.length) return null;
+  const ordered = sortByCost ? [...rows].sort((a, b) => b.total_usd - a.total_usd) : rows;
+  const max = Math.max(...rows.map((r) => r.total_usd), 1e-9);
   return (
     <div className="rounded-lg border border-zinc-800">
-      <h2 className="border-b border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300">
+      <h2 className="border-b border-zinc-800 bg-zinc-900 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400">
         {title}
       </h2>
-      <table className="w-full text-sm">
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} className="border-t border-zinc-800/60 first:border-t-0">
-              <td className="max-w-xs truncate px-4 py-1.5 text-zinc-300">{row.key}</td>
-              <td className="px-4 py-1.5 text-right text-zinc-500">{row.runs} runs</td>
-              <td className="px-4 py-1.5 text-right font-mono text-zinc-200">
+      <ul>
+        {ordered.map((row) => (
+          <li
+            key={row.key}
+            className="border-t border-zinc-800/60 px-4 py-2 first:border-t-0"
+          >
+            <div className="flex items-baseline gap-3 whitespace-nowrap">
+              <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">{row.key}</span>
+              <span className="font-mono text-xs text-zinc-500">{row.runs} run{row.runs === 1 ? "" : "s"}</span>
+              <span className="w-20 text-right font-mono text-sm text-zinc-200">
                 {fmtCost(row.total_usd)}
-              </td>
-              <td className="px-4 py-1.5 text-right font-mono text-zinc-500">
-                {fmtCost(row.mean_usd)} mean
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </span>
+            </div>
+            <div className="mt-1.5 h-1 w-full overflow-hidden rounded bg-zinc-800/80">
+              <div
+                className="h-full bg-orange-700/80"
+                style={{ width: `${Math.max((row.total_usd / max) * 100, 0.5)}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -65,7 +81,7 @@ export default function CostsPage() {
     <div className="space-y-6">
       <div className="flex items-baseline gap-6">
         <h1 className="text-lg font-semibold">Costs</h1>
-        <span className="font-mono text-2xl text-zinc-100">{fmtCost(costs.total_usd)}</span>
+        <span className="font-mono text-2xl text-zinc-100">{fmtMoney(costs.total_usd)}</span>
         <span className="text-sm text-zinc-500">across {costs.runs} runs</span>
       </div>
 
@@ -95,13 +111,14 @@ export default function CostsPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <GroupTable title="per task" rows={costs.per_task} />
+        <GroupTable title="per task" rows={costs.per_task} sortByCost />
         <div className="space-y-6">
-          <GroupTable title="per day" rows={costs.per_day} />
           <GroupTable
             title="per agent"
             rows={costs.per_agent.filter((g) => !(g.key === "—" && costs.per_agent.length === 1))}
+            sortByCost
           />
+          <GroupTable title="per day" rows={costs.per_day} />
         </div>
       </div>
     </div>

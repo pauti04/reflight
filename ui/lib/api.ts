@@ -28,6 +28,7 @@ export type RecurringFailure = {
 
 export type Run = {
   run_id: string;
+  agent: string | null;
   task: string | null;
   status: string | null;
   verdict: "pass" | "warn" | "fail" | null;
@@ -126,8 +127,19 @@ export const verdictStyle: Record<string, string> = {
 export const fmtCost = (c: number | null | undefined) =>
   c == null ? "—" : `$${c.toFixed(4)}`;
 
-export const fmtTime = (ts: number | null) =>
-  ts == null ? "—" : new Date(ts * 1000).toLocaleString();
+// for totals: dollars-and-cents once the amount is big enough to read that way
+export const fmtMoney = (c: number | null | undefined) =>
+  c == null ? "—" : c >= 0.1 ? `$${c.toFixed(2)}` : `$${c.toFixed(4)}`;
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export const fmtTime = (ts: number | null) => {
+  if (ts == null) return "—";
+  const d = new Date(ts * 1000);
+  const h = d.getHours() % 12 || 12;
+  const ampm = d.getHours() < 12 ? "AM" : "PM";
+  return `${MONTHS[d.getMonth()]} ${d.getDate()} · ${h}:${String(d.getMinutes()).padStart(2, "0")} ${ampm}`;
+};
 
 export const fmtDuration = (start: number | null, end: number | null) => {
   if (start == null || end == null) return "—";

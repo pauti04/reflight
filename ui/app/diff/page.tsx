@@ -30,16 +30,67 @@ function summarize(event: AgentEvent | undefined): string {
   }
 }
 
+// tokens present in this line but not in the counterpart, via LCS — so at the
+// divergence row the eye lands on exactly what changed, not a wall of sameness
+// split on whitespace AND JSON punctuation so a differing value inside a
+// payload highlights alone, not the whole call
+const TOKEN_SPLIT = /([\s{}[\](),:]+)/;
+
+function changedTokens(mine: string, other: string): Set<number> {
+  const a = mine.split(TOKEN_SPLIT);
+  const b = other.split(TOKEN_SPLIT);
+  const n = a.length;
+  const m = b.length;
+  const lcs: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--)
+    for (let j = m - 1; j >= 0; j--)
+      lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+  const changed = new Set<number>();
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      i++;
+      j++;
+    } else if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+      if (a[i].trim()) changed.add(i);
+      i++;
+    } else j++;
+  }
+  for (; i < n; i++) if (a[i].trim()) changed.add(i);
+  return changed;
+}
+
+function HighlightedLine({ text, other }: { text: string; other: string }) {
+  const tokens = text.split(TOKEN_SPLIT);
+  const changed = changedTokens(text, other);
+  return (
+    <>
+      {tokens.map((token, i) =>
+        changed.has(i) ? (
+          <mark key={i} className="rounded bg-red-500/30 px-0.5 text-red-100">
+            {token}
+          </mark>
+        ) : (
+          <span key={i}>{token}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 function Column({
   title,
   events,
   divergence,
   rows,
+  counterpart,
 }: {
   title: string;
   events: AgentEvent[];
   divergence: number | null;
   rows: number;
+  counterpart: AgentEvent[];
 }) {
   return (
     <div>
@@ -69,7 +120,11 @@ function Column({
               }`}
             >
               <span className="mr-2 text-zinc-600">{i}</span>
-              {summarize(event)}
+              {state === "diverged" ? (
+                <HighlightedLine text={summarize(event)} other={summarize(counterpart[i])} />
+              ) : (
+                summarize(event)
+              )}
             </li>
           );
         })}
@@ -116,8 +171,20 @@ function DiffView() {
         </p>
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Column title={a} events={diff.a} divergence={diff.divergence_seq} rows={rows} />
-        <Column title={b} events={diff.b} divergence={diff.divergence_seq} rows={rows} />
+        <Column
+          title={a}
+          events={diff.a}
+          divergence={diff.divergence_seq}
+          rows={rows}
+          counterpart={diff.b}
+        />
+        <Column
+          title={b}
+          events={diff.b}
+          divergence={diff.divergence_seq}
+          rows={rows}
+          counterpart={diff.a}
+        />
       </div>
     </div>
   );

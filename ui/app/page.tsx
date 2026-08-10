@@ -9,6 +9,7 @@ import {
   STATIC,
   fetchRuns,
   fmtCost,
+  fmtMoney,
   fmtTime,
   parseLabels,
   verdictStyle,
@@ -218,7 +219,7 @@ export default function RunsPage() {
         <h1 className="text-lg font-semibold">Runs</h1>
         <span className="font-mono text-xs text-zinc-500">
           {visible.length} shown · {Math.round(passRate * 100)}% pass ·{" "}
-          {fmtCost(totalCost)} total
+          {fmtMoney(totalCost)} total
         </span>
         <input
           ref={searchRef}
@@ -259,6 +260,7 @@ export default function RunsPage() {
             <tr>
               <th className="px-3 py-2"></th>
               <th className="px-4 py-2 font-medium">run</th>
+              <th className="px-4 py-2 font-medium">agent</th>
               <th className="px-4 py-2 font-medium">verdict</th>
               <th className="px-4 py-2 font-medium">failure labels</th>
               <th className="px-4 py-2 font-medium">task</th>
@@ -281,13 +283,16 @@ export default function RunsPage() {
                     className="accent-orange-500"
                   />
                 </td>
-                <td className="px-4 py-2 font-mono">
+                <td className="px-4 py-2 font-mono whitespace-nowrap">
                   <Link
                     href={`/runs/${run.run_id}`}
                     className="text-orange-400 hover:text-orange-300 hover:underline"
                   >
                     {run.run_id}
                   </Link>
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap font-mono text-xs text-zinc-500">
+                  {run.agent ?? "—"}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   <span
@@ -299,15 +304,22 @@ export default function RunsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    {parseLabels(run.labels).map((label) => (
-                      <span
-                        key={label}
-                        className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-mono text-red-300"
-                      >
-                        {label}
+                  <div className="flex gap-1 whitespace-nowrap">
+                    {parseLabels(run.labels)
+                      .slice(0, 2)
+                      .map((label) => (
+                        <span
+                          key={label}
+                          className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-mono text-red-300"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    {parseLabels(run.labels).length > 2 && (
+                      <span className="px-1 py-0.5 text-xs font-mono text-zinc-500">
+                        +{parseLabels(run.labels).length - 2}
                       </span>
-                    ))}
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-2 max-w-sm truncate text-zinc-300">

@@ -80,6 +80,46 @@ export default function RootLayout({
           </nav>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
+        <footer className="mx-auto mt-12 max-w-6xl border-t border-zinc-900 px-6 py-6">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs text-zinc-600">
+            <span className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
+              Reflight — every run on this site is a real recording
+            </span>
+            <a
+              href="https://github.com/pauti04/reflight"
+              className="hover:text-zinc-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://pypi.org/project/reflight/"
+              className="hover:text-zinc-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              pip install reflight
+            </a>
+            <a
+              href="https://github.com/pauti04/reflight/blob/main/docs/format.md"
+              className="hover:text-zinc-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              recording format
+            </a>
+            <a
+              href="https://github.com/pauti04/reflight/blob/main/docs/case-study.md"
+              className="hover:text-zinc-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              case study
+            </a>
+          </div>
+        </footer>
       </body>
     </html>
   );
