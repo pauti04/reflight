@@ -94,7 +94,7 @@ function Column({
 }) {
   return (
     <div>
-      <h2 className="mb-2 font-mono text-sm text-orange-400">
+      <h2 className="mb-2 font-mono text-sm text-cyan-400">
         <Link href={`/runs/${title}`} className="hover:underline">
           {title}
         </Link>
@@ -115,11 +115,11 @@ function Column({
                 state === "diverged"
                   ? "bg-red-950/70 ring-1 ring-red-800 text-red-200"
                   : state === "after"
-                    ? "bg-zinc-900/40 text-zinc-500"
-                    : "bg-zinc-900/70 text-zinc-300"
+                    ? "bg-slate-900/40 text-slate-500"
+                    : "bg-slate-900/70 text-slate-300"
               }`}
             >
-              <span className="mr-2 text-zinc-600">{i}</span>
+              <span className="mr-2 text-slate-600">{i}</span>
               {state === "diverged" ? (
                 <HighlightedLine text={summarize(event)} other={summarize(counterpart[i])} />
               ) : (
@@ -145,16 +145,16 @@ function DiffView() {
   }, [a, b]);
 
   if (!a || !b)
-    return <p className="text-zinc-400">Pick two runs on the runs page to diff.</p>;
+    return <p className="text-slate-400">Pick two runs on the runs page to diff.</p>;
   if (error) return <p className="font-mono text-red-400">{error}</p>;
-  if (!diff) return <p className="text-zinc-500">loading…</p>;
+  if (!diff) return <p className="text-slate-500">loading…</p>;
 
   const rows = Math.max(diff.a_len, diff.b_len);
   return (
     <div>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">Run diff</h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-slate-400">
           {diff.identical ? (
             "The runs are identical."
           ) : diff.divergence_seq == null ? (
@@ -192,7 +192,7 @@ function DiffView() {
 
 export default function DiffPage() {
   return (
-    <Suspense fallback={<p className="text-zinc-500">loading…</p>}>
+    <Suspense fallback={<p className="text-slate-500">loading…</p>}>
       <DiffView />
     </Suspense>
   );

@@ -50,6 +50,7 @@ export default function FdrPanel() {
   const [finding, setFinding] = useState<Finding | null>(null);
   const [shown, setShown] = useState(0);
   const [phase, setPhase] = useState<"play" | "verdict" | "hold">("play");
+  const [scrubbed, setScrubbed] = useState(false); // user grabbed the timeline
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function FdrPanel() {
   }, []);
 
   useEffect(() => {
-    if (!rows.length) return;
+    if (!rows.length || scrubbed) return;
     if (reduced) {
       setShown(rows.length);
       setPhase("verdict");
@@ -84,7 +85,7 @@ export default function FdrPanel() {
       }, RESTART_HOLD_MS);
     }
     return () => clearTimeout(timer);
-  }, [rows, shown, phase, reduced]);
+  }, [rows, shown, phase, reduced, scrubbed]);
 
   if (!rows.length) return null;
   const visible = rows.slice(Math.max(0, shown - WINDOW), shown);
@@ -93,15 +94,15 @@ export default function FdrPanel() {
   return (
     <Link
       href={`/runs/${RUN_ID}`}
-      className="block rounded-lg border border-zinc-800 bg-black font-mono text-xs
-                 transition-colors hover:border-orange-800"
+      className="instrument block rounded-lg border border-slate-800 bg-slate-950 font-mono text-xs
+                 transition-colors hover:border-cyan-800"
     >
-      <div className="flex items-center gap-2 border-b border-zinc-800/80 px-4 py-2">
-        <span className="rec-dot h-2 w-2 rounded-full bg-orange-500" />
-        <span className="tracking-widest text-orange-400">
+      <div className="flex items-center gap-2 border-b border-slate-800/80 px-4 py-2">
+        <span className="rec-dot h-2 w-2 rounded-full bg-cyan-500" />
+        <span className="tracking-widest text-cyan-400">
           {done ? "REPLAY FROM RECORDING" : "RECORDING"}
         </span>
-        <span className="ml-auto text-zinc-600">
+        <span className="ml-auto text-slate-600">
           run {RUN_ID} · event {Math.min(shown, rows.length)}/{rows.length}
         </span>
       </div>
@@ -116,11 +117,11 @@ export default function FdrPanel() {
                 tone === "bad"
                   ? "text-red-400"
                   : tone === "dim"
-                    ? "text-zinc-600"
-                    : "text-zinc-300"
+                    ? "text-slate-600"
+                    : "text-slate-300"
               }
             >
-              <span className="mr-2 text-zinc-700">
+              <span className="mr-2 text-slate-700">
                 {String(row.event.seq).padStart(2, "0")}
               </span>
               {text}
@@ -128,13 +129,46 @@ export default function FdrPanel() {
           );
         })}
         {!done && (
-          <span className="rec-dot inline-block h-3 w-1.5 bg-orange-500 align-text-bottom" />
+          <span className="rec-dot inline-block h-3 w-1.5 bg-cyan-500 align-text-bottom" />
         )}
       </div>
 
+      {/* the scrubber: one tick per recorded event — grab the timeline */}
       <div
-        className={`border-t border-zinc-800/80 px-4 py-2 transition-opacity duration-500 ${
-          done ? "opacity-100" : "opacity-0"
+        className="flex items-end gap-px border-t border-slate-800/80 px-4 pb-1.5 pt-2"
+        onClick={(e) => e.preventDefault()}
+      >
+        {rows.map((row, i) => {
+          const { tone } = line(row.event);
+          const lit = i < shown;
+          return (
+            <button
+              key={row.event.seq}
+              aria-label={`event ${i}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setScrubbed(true);
+                setPhase("play");
+                setShown(i + 1);
+              }}
+              className={`h-2 flex-1 rounded-sm transition-all hover:h-3 ${
+                i === shown - 1
+                  ? "h-3 bg-cyan-500"
+                  : lit
+                    ? tone === "bad"
+                      ? "bg-red-700"
+                      : "bg-slate-600"
+                    : "bg-slate-800"
+              }`}
+            />
+          );
+        })}
+      </div>
+
+      <div
+        className={`border-t border-slate-800/80 px-4 py-2 transition-opacity duration-500 ${
+          done || scrubbed ? "opacity-100" : "opacity-0"
         }`}
       >
         {finding && (
@@ -143,9 +177,26 @@ export default function FdrPanel() {
             {finding.confidence.toFixed(2)})
           </div>
         )}
-        <div className="text-zinc-500">
-          replayed from the recording · api calls 0 · cost $0.00 · click to step
-          through it yourself
+        <div className="flex items-baseline gap-2 text-slate-500">
+          <span>
+            {scrubbed
+              ? "scrubbing the recording — every tick is a real event"
+              : "replayed from the recording · api calls 0 · cost $0.00"}
+          </span>
+          {scrubbed ? (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setScrubbed(false);
+              }}
+              className="rounded border border-slate-700 px-1.5 text-cyan-400 hover:border-cyan-800"
+            >
+              RESUME
+            </button>
+          ) : (
+            <span>· click to step through it yourself</span>
+          )}
         </div>
       </div>
     </Link>

@@ -39,24 +39,24 @@ function RequestView({ request }: { request: AgentEvent }) {
   const tools: AgentEvent[] = request.tools ?? [];
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
+      <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
         request — {messages.length} message{messages.length === 1 ? "" : "s"}
         {request.system ? " + system" : ""}
         {tools.length ? ` + ${tools.length} tools` : ""}
       </summary>
-      <div className="mt-2 max-h-72 space-y-1 overflow-auto rounded bg-zinc-900 p-3">
+      <div className="mt-2 max-h-72 space-y-1 overflow-auto rounded bg-slate-900 p-3">
         {request.system && (
           <div className="flex gap-2">
             <span className="w-20 shrink-0 font-mono text-violet-400">system</span>
-            <span className="whitespace-pre-wrap text-zinc-400">
+            <span className="whitespace-pre-wrap text-slate-400">
               {contentPreview(request.system).slice(0, 400)}
             </span>
           </div>
         )}
         {messages.map((m, i) => (
           <div key={i} className="flex gap-2">
-            <span className="w-20 shrink-0 font-mono text-zinc-500">{m.role}</span>
-            <span className="truncate text-zinc-300">
+            <span className="w-20 shrink-0 font-mono text-slate-500">{m.role}</span>
+            <span className="truncate text-slate-300">
               {contentPreview(m.content).slice(0, 300)}
             </span>
           </div>
@@ -64,7 +64,7 @@ function RequestView({ request }: { request: AgentEvent }) {
         {tools.length > 0 && (
           <div className="flex gap-2 pt-1">
             <span className="w-20 shrink-0 font-mono text-emerald-500">tools</span>
-            <span className="text-zinc-400">
+            <span className="text-slate-400">
               {tools.map((t: AgentEvent) => t.name ?? t.type).join(", ")}
             </span>
           </div>
@@ -89,11 +89,11 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
   const snippet = forkSnippet(run, seq);
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
+      <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
         fork from this event
       </summary>
       <div className="relative mt-2">
-        <pre className="overflow-x-auto rounded bg-zinc-900 p-3 text-emerald-200">
+        <pre className="overflow-x-auto rounded bg-slate-900 p-3 text-emerald-200">
           {snippet}
         </pre>
         <button
@@ -103,8 +103,8 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
               setTimeout(() => setCopied(false), 1500);
             });
           }}
-          className="absolute right-2 top-2 rounded border border-zinc-700 px-2 py-0.5
-                     font-mono text-zinc-400 hover:bg-zinc-800"
+          className="absolute right-2 top-2 rounded border border-slate-700 px-2 py-0.5
+                     font-mono text-slate-400 hover:bg-slate-800"
         >
           {copied ? "copied" : "copy"}
         </button>
@@ -114,12 +114,12 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
 }
 
 const dotColor: Record<string, string> = {
-  run_start: "bg-zinc-500",
-  llm_call: "bg-sky-400",
+  run_start: "bg-slate-500",
+  llm_call: "bg-violet-400",
   tool_call: "bg-emerald-400",
   state_snapshot: "bg-violet-400",
   error: "bg-red-500",
-  run_end: "bg-zinc-300",
+  run_end: "bg-slate-300",
 };
 
 function isFailure(event: AgentEvent): boolean {
@@ -168,8 +168,8 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
   return (
     <div className="space-y-4">
       <div className="flex items-baseline gap-3">
-        <span className="font-mono text-zinc-500">seq {event.seq}</span>
-        <span className="font-mono font-semibold text-zinc-100">
+        <span className="font-mono text-slate-500">seq {event.seq}</span>
+        <span className="font-mono font-semibold text-slate-100">
           {event.type}
         </span>
         {failure && (
@@ -178,7 +178,7 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
           </span>
         )}
         {row.cost_usd != null && (
-          <span className="font-mono text-xs text-zinc-400">
+          <span className="font-mono text-xs text-slate-400">
             {fmtCost(row.cost_usd)}
           </span>
         )}
@@ -186,14 +186,14 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
 
       {event.type === "llm_call" && (
         <div className="text-sm space-y-2">
-          <div className="text-zinc-400 font-mono text-xs">
+          <div className="text-slate-400 font-mono text-xs">
             {event.response?.model} · stop_reason: {event.response?.stop_reason} ·{" "}
             {event.response?.usage?.input_tokens}/
             {event.response?.usage?.output_tokens} tok
           </div>
           {(event.response?.content ?? []).map((block: AgentEvent, i: number) =>
             block.type === "text" ? (
-              <p key={i} className="whitespace-pre-wrap text-zinc-200">
+              <p key={i} className="whitespace-pre-wrap text-slate-200">
                 {block.text}
               </p>
             ) : (
@@ -210,7 +210,7 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
           <p className="text-emerald-300">
             {event.name}({JSON.stringify(event.input)})
           </p>
-          <p className={event.is_error ? "text-red-300" : "text-zinc-200"}>
+          <p className={event.is_error ? "text-red-300" : "text-slate-200"}>
             → {typeof event.result === "string" ? event.result : JSON.stringify(event.result)}
           </p>
         </div>
@@ -225,10 +225,10 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
       )}
 
       <details className="text-xs">
-        <summary className="cursor-pointer text-zinc-500 hover:text-zinc-300">
+        <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
           raw event payload
         </summary>
-        <pre className="mt-2 overflow-x-auto rounded bg-zinc-900 p-3 text-zinc-300">
+        <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-3 text-slate-300">
           {JSON.stringify(event, null, 2)}
         </pre>
       </details>
@@ -309,12 +309,12 @@ export default function RunView({ id }: { id: string }) {
   }, [onKey]);
 
   if (error) return <p className="text-red-400 font-mono">{error}</p>;
-  if (!run || !events) return <p className="text-zinc-500">loading…</p>;
+  if (!run || !events) return <p className="text-slate-500">loading…</p>;
 
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h1 className="font-mono text-lg font-semibold text-zinc-50">
+        <h1 className="font-mono text-lg font-semibold text-slate-50">
           {run.run_id}
         </h1>
         <span
@@ -326,8 +326,8 @@ export default function RunView({ id }: { id: string }) {
         >
           {run.status}
         </span>
-        <span className="text-sm text-zinc-400">{run.task}</span>
-        <span className="font-mono text-xs text-zinc-500">
+        <span className="text-sm text-slate-400">{run.task}</span>
+        <span className="font-mono text-xs text-slate-500">
           {run.model} · {run.input_tokens}/{run.output_tokens} tok ·{" "}
           {fmtCost(run.cost_usd)} · {fmtDuration(run.started_at, run.ended_at)}
         </span>
@@ -335,8 +335,8 @@ export default function RunView({ id }: { id: string }) {
           <button
             onClick={onPromote}
             disabled={promoting || promoted !== null}
-            className="ml-auto rounded border border-orange-800 bg-orange-950/60 px-3 py-1
-                       font-mono text-xs text-orange-300 enabled:hover:bg-orange-900/60
+            className="ml-auto rounded border border-cyan-800 bg-cyan-950/60 px-3 py-1
+                       font-mono text-xs text-cyan-300 enabled:hover:bg-cyan-900/60
                        disabled:opacity-50"
           >
             {promoted ? "promoted" : promoting ? "promoting…" : "promote to test"}
@@ -348,15 +348,15 @@ export default function RunView({ id }: { id: string }) {
         <p className="mb-4 font-mono text-xs text-red-400">{promoteError}</p>
       )}
       {promoted && (
-        <div className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
-          <p className="mb-2 font-mono text-xs font-semibold text-orange-300">
+        <div className="mb-5 rounded-lg border border-cyan-900/60 bg-cyan-950/20 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-cyan-300">
             regression test written: {promoted.path}
           </p>
-          <p className="mb-2 text-xs text-zinc-400">
+          <p className="mb-2 text-xs text-slate-400">
             Edit the assertions to state what SHOULD happen — then it runs in
             your normal pytest invocation (see README: pytest plugin).
           </p>
-          <pre className="max-h-64 overflow-auto rounded bg-zinc-900 p-3 text-xs text-zinc-300">
+          <pre className="max-h-64 overflow-auto rounded bg-slate-900 p-3 text-xs text-slate-300">
             {promoted.yaml}
           </pre>
         </div>
@@ -401,19 +401,19 @@ export default function RunView({ id }: { id: string }) {
                       {f.label}
                       {seqs.length > 1 && ` ×${seqs.length}`}
                     </span>
-                    <span className="text-zinc-300">{f.detail}</span>
-                    <span className="ml-2 font-mono text-xs text-zinc-500">
+                    <span className="text-slate-300">{f.detail}</span>
+                    <span className="ml-2 font-mono text-xs text-slate-500">
                       seq {seqs.join(", ")} · conf {f.confidence.toFixed(2)}
                     </span>
                   </button>
                   {(f.seen_in?.length ?? 0) > 0 && (
-                    <span className="ml-2 font-mono text-xs text-orange-300">
+                    <span className="ml-2 font-mono text-xs text-cyan-300">
                       seen again — same bug in {f.seen_in!.length} other run
                       {f.seen_in!.length > 1 ? "s" : ""}:{" "}
                       {f.seen_in!.slice(0, 4).map((id, j) => (
                         <span key={id}>
                           {j > 0 && ", "}
-                          <a href={`${BASE}/runs/${id}`} className="underline hover:text-orange-200">
+                          <a href={`${BASE}/runs/${id}`} className="underline hover:text-cyan-200">
                             {id}
                           </a>
                         </span>
@@ -429,15 +429,15 @@ export default function RunView({ id }: { id: string }) {
       )}
 
       {run.promoted_yaml && (
-        <details className="mb-5 rounded-lg border border-orange-900/60 bg-orange-950/20 p-3">
-          <summary className="cursor-pointer font-mono text-xs font-semibold text-orange-300">
+        <details className="mb-5 rounded-lg border border-cyan-900/60 bg-cyan-950/20 p-3">
+          <summary className="cursor-pointer font-mono text-xs font-semibold text-cyan-300">
             PROMOTE — this failure is one command from being a regression test.
             `reflight promote {run.run_id}` writes:
           </summary>
-          <pre className="mt-2 max-h-64 overflow-auto rounded bg-zinc-900 p-3 text-xs text-zinc-300">
+          <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900 p-3 text-xs text-slate-300">
             {run.promoted_yaml}
           </pre>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-slate-500">
             Edit the assertions to state what SHOULD happen — then it runs in plain
             pytest, replay-first: passing costs $0.00.
           </p>
@@ -450,8 +450,8 @@ export default function RunView({ id }: { id: string }) {
             if (!playing && selected >= visible.length - 1) setSelected(0);
             setPlaying((p) => !p);
           }}
-          className="mr-2 rounded border border-orange-800 bg-orange-950/60 px-3 py-0.5
-                     font-mono text-xs text-orange-300 hover:bg-orange-900/60"
+          className="mr-2 rounded border border-cyan-800 bg-cyan-950/60 px-3 py-0.5
+                     font-mono text-xs text-cyan-300 hover:bg-cyan-900/60"
         >
           {playing ? "PAUSE" : "REPLAY"}
         </button>
@@ -471,14 +471,50 @@ export default function RunView({ id }: { id: string }) {
             }}
             className={`rounded px-2 py-0.5 font-mono text-xs ${
               typeFilter === key
-                ? "bg-zinc-700 text-zinc-100 ring-1 ring-zinc-500"
-                : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+                ? "bg-slate-700 text-slate-100 ring-1 ring-slate-500"
+                : "bg-slate-900 text-slate-500 hover:text-slate-300"
             }`}
           >
             {key === "llm_call" ? "llm" : key === "tool_call" ? "tools" : key} {n}
           </button>
         ))}
       </div>
+
+      {/* strip chart: the whole recording at a glance — every event is a tick */}
+      {events.length > 1 && (
+        <div className="mb-4 flex items-end gap-px rounded-md border border-slate-800 bg-slate-950 px-2 pb-1.5 pt-2">
+          {events.map((row, i) => {
+            const isSelected =
+              visible[Math.min(selected, Math.max(visible.length - 1, 0))]?.event.seq ===
+              row.event.seq;
+            const failure = isFailure(row.event);
+            return (
+              <button
+                key={row.event.seq}
+                title={`${row.event.seq} · ${row.event.type}`}
+                onClick={() => {
+                  setPlaying(false);
+                  setTypeFilter("all");
+                  setSelected(i);
+                }}
+                className={`flex-1 rounded-sm transition-all hover:h-4 ${
+                  isSelected
+                    ? "h-4 ring-1 ring-cyan-500"
+                    : "h-2.5"
+                } ${
+                  failure
+                    ? "bg-red-600"
+                    : row.event.type === "llm_call"
+                      ? "bg-violet-900/80"
+                      : row.event.type === "tool_call"
+                        ? "bg-emerald-900/80"
+                        : "bg-slate-700"
+                }`}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* timeline */}
@@ -495,22 +531,22 @@ export default function RunView({ id }: { id: string }) {
                   }}
                   className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm ${
                     i === selected
-                      ? "bg-zinc-800/80 ring-1 ring-zinc-700"
-                      : "hover:bg-zinc-900/70"
+                      ? "bg-slate-800/80 ring-1 ring-slate-700"
+                      : "hover:bg-slate-900/70"
                   }`}
                 >
                   <span
                     className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
-                      failure ? "bg-red-500" : dotColor[event.type] ?? "bg-zinc-500"
+                      failure ? "bg-red-500" : dotColor[event.type] ?? "bg-slate-500"
                     }`}
                   />
-                  <span className="w-8 shrink-0 font-mono text-xs text-zinc-500">
+                  <span className="w-8 shrink-0 font-mono text-xs text-slate-500">
                     {event.seq}
                   </span>
-                  <span className="w-28 shrink-0 font-mono text-xs text-zinc-400">
+                  <span className="w-28 shrink-0 font-mono text-xs text-slate-400">
                     {event.type}
                   </span>
-                  <span className="truncate text-zinc-300">
+                  <span className="truncate text-slate-300">
                     {summarize(event)}
                   </span>
                 </button>
@@ -520,15 +556,15 @@ export default function RunView({ id }: { id: string }) {
         </ol>
 
         {/* inspector */}
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 lg:sticky lg:top-6 self-start">
+        <div className="instrument rounded-lg border border-slate-800 bg-slate-900/40 p-4 lg:sticky lg:top-6 self-start">
           {visible.length > 0 ? (
             <Inspector row={visible[Math.min(selected, visible.length - 1)]} run={run} />
           ) : (
-            <p className="text-sm text-zinc-500">no events match this filter</p>
+            <p className="text-sm text-slate-500">no events match this filter</p>
           )}
         </div>
       </div>
-      <p className="mt-4 text-xs text-zinc-600">
+      <p className="mt-4 text-xs text-slate-600">
         ↑/↓ or j/k to step through the run
       </p>
     </div>

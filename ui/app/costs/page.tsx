@@ -34,26 +34,26 @@ function GroupTable({
   const ordered = sortByCost ? [...rows].sort((a, b) => b.total_usd - a.total_usd) : rows;
   const max = Math.max(...rows.map((r) => r.total_usd), 1e-9);
   return (
-    <div className="rounded-lg border border-zinc-800">
-      <h2 className="border-b border-zinc-800 bg-zinc-900 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400">
+    <div className="rounded-lg border border-slate-800">
+      <h2 className="border-b border-slate-800 bg-slate-900 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-slate-400">
         {title}
       </h2>
       <ul>
         {ordered.map((row) => (
           <li
             key={row.key}
-            className="border-t border-zinc-800/60 px-4 py-2 first:border-t-0"
+            className="border-t border-slate-800/60 px-4 py-2 first:border-t-0"
           >
             <div className="flex items-baseline gap-3 whitespace-nowrap">
-              <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">{row.key}</span>
-              <span className="font-mono text-xs text-zinc-500">{row.runs} run{row.runs === 1 ? "" : "s"}</span>
-              <span className="w-20 text-right font-mono text-sm text-zinc-200">
+              <span className="min-w-0 flex-1 truncate text-sm text-slate-300">{row.key}</span>
+              <span className="font-mono text-xs text-slate-500">{row.runs} run{row.runs === 1 ? "" : "s"}</span>
+              <span className="w-20 text-right font-mono text-sm text-slate-200">
                 {fmtCost(row.total_usd)}
               </span>
             </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded bg-zinc-800/80">
+            <div className="mt-1.5 h-1 w-full overflow-hidden rounded bg-slate-800/80">
               <div
-                className="h-full bg-orange-700/80"
+                className="h-full bg-cyan-700/80"
                 style={{ width: `${Math.max((row.total_usd / max) * 100, 0.5)}%` }}
               />
             </div>
@@ -75,14 +75,14 @@ export default function CostsPage() {
   }, []);
 
   if (error) return <p className="font-mono text-red-400">{error}</p>;
-  if (!costs) return <p className="text-zinc-500">loading…</p>;
+  if (!costs) return <p className="text-slate-500">loading…</p>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-baseline gap-6">
         <h1 className="text-lg font-semibold">Costs</h1>
-        <span className="font-mono text-2xl text-zinc-100">{fmtMoney(costs.total_usd)}</span>
-        <span className="text-sm text-zinc-500">across {costs.runs} runs</span>
+        <span className="font-mono text-2xl text-slate-100">{fmtMoney(costs.total_usd)}</span>
+        <span className="text-sm text-slate-500">across {costs.runs} runs</span>
       </div>
 
       {costs.anomalies.length > 0 && (
@@ -95,12 +95,12 @@ export default function CostsPage() {
               <li key={a.run_id}>
                 <Link
                   href={`/runs/${a.run_id}`}
-                  className="font-mono text-orange-400 hover:underline"
+                  className="font-mono text-cyan-400 hover:underline"
                 >
                   {a.run_id}
                 </Link>{" "}
                 <span className="font-mono text-amber-200">{fmtCost(a.cost_usd)}</span>
-                <span className="text-zinc-400">
+                <span className="text-slate-400">
                   {" "}
                   — {a.factor.toFixed(1)}× the task median ({fmtCost(a.median_usd)})
                 </span>

@@ -38,57 +38,57 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-screen bg-zinc-950 text-zinc-200 font-sans">
-        <header className="border-b border-zinc-800/80 px-6 py-3 flex items-center gap-3">
+      <body className="min-h-screen bg-slate-950 text-slate-200 font-sans">
+        <header className="border-b border-slate-800/80 px-6 py-3 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="rec-dot h-2.5 w-2.5 rounded-full bg-orange-500" />
+            <span className="rec-dot h-2.5 w-2.5 rounded-full bg-cyan-500" />
             <span
-              className="text-lg font-bold tracking-tight text-zinc-50"
+              className="text-lg font-bold tracking-tight text-slate-50"
               style={{ fontFamily: "var(--font-display)" }}
             >
               Reflight
             </span>
           </Link>
-          <span className="hidden text-xs text-zinc-500 sm:inline">
+          <span className="hidden text-xs text-slate-500 sm:inline">
             the flight recorder for AI agents
           </span>
           {process.env.NEXT_PUBLIC_STATIC_DEMO === "1" && (
-            <span className="rounded-full border border-orange-900/60 bg-orange-950/40 px-2.5 py-0.5 font-mono text-xs text-orange-300">
+            <span className="rounded-full border border-cyan-900/60 bg-cyan-950/40 px-2.5 py-0.5 font-mono text-xs text-cyan-300">
               demo · real recorded runs
             </span>
           )}
           <nav className="ml-auto flex items-center gap-4 text-sm">
-            <Link href="/" className="text-zinc-400 hover:text-zinc-100">
+            <Link href="/" className="text-slate-400 hover:text-slate-100">
               runs
             </Link>
-            <Link href="/reliability" className="text-zinc-400 hover:text-zinc-100">
+            <Link href="/reliability" className="text-slate-400 hover:text-slate-100">
               reliability
             </Link>
-            <Link href="/costs" className="text-zinc-400 hover:text-zinc-100">
+            <Link href="/costs" className="text-slate-400 hover:text-slate-100">
               costs
             </Link>
             <a
               href="https://github.com/pauti04/reflight"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md border border-zinc-700 px-2.5 py-1 font-mono text-xs
-                         text-zinc-200 transition-colors hover:border-orange-700
-                         hover:bg-orange-950/40 hover:text-orange-200"
+              className="rounded-md border border-slate-700 px-2.5 py-1 font-mono text-xs
+                         text-slate-200 transition-colors hover:border-cyan-700
+                         hover:bg-cyan-950/40 hover:text-cyan-200"
             >
               GitHub
             </a>
           </nav>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
-        <footer className="mx-auto mt-12 max-w-6xl border-t border-zinc-900 px-6 py-6">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs text-zinc-600">
+        <footer className="mx-auto mt-12 max-w-6xl border-t border-slate-900 px-6 py-6">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs text-slate-600">
             <span className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-600" />
               Reflight — every run on this site is a real recording
             </span>
             <a
               href="https://github.com/pauti04/reflight"
-              className="hover:text-zinc-400"
+              className="hover:text-slate-400"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -96,7 +96,7 @@ export default function RootLayout({
             </a>
             <a
               href="https://pypi.org/project/reflight/"
-              className="hover:text-zinc-400"
+              className="hover:text-slate-400"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -104,7 +104,7 @@ export default function RootLayout({
             </a>
             <a
               href="https://github.com/pauti04/reflight/blob/main/docs/format.md"
-              className="hover:text-zinc-400"
+              className="hover:text-slate-400"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -112,7 +112,7 @@ export default function RootLayout({
             </a>
             <a
               href="https://github.com/pauti04/reflight/blob/main/docs/case-study.md"
-              className="hover:text-zinc-400"
+              className="hover:text-slate-400"
               target="_blank"
               rel="noopener noreferrer"
             >
