@@ -50,11 +50,17 @@ the whole reliability loop on top:
 | ⛔ **Govern** | Hard cost/token budgets, loop circuit breaker, tool-call cache, cost dashboard with anomaly flags |
 | 📡 **Export** | `reflight otel <run_id>` ships any run to your OTLP collector as GenAI-convention spans — works *with* Langfuse/Datadog/Jaeger, not against them |
 
+## Install
+
+```bash
+pip install reflight         # SDK + CLI (Python 3.12+); extras: [otel], [postgres]
+```
+
 ## Quickstart
 
 ```bash
-git clone <repo> && cd reflight
-uv sync                      # installs the SDK + CLI (Python 3.12+)
+git clone https://github.com/pauti04/reflight && cd reflight
+uv sync                      # dev setup: SDK + CLI + examples
 
 # record two demo runs (scripted model — no API key needed)
 uv run python examples/research_agent/main.py record \
