@@ -38,7 +38,12 @@ session. These will not diverge loudly — they simply happen again on replay:
 - **Unwrapped side effects.** A `requests.get()` call, a file write, a
   subprocess — if it doesn't go through `session.execute`, a wrapped client,
   or a decorated tool, replay re-executes it for real. The fix is structural:
-  route external I/O through tools. That's good agent hygiene anyway.
+  route external I/O through tools. That's good agent hygiene anyway. For
+  *network* side effects the gap is now detectable: record with
+  `flight_check=True` and any connection opened outside the session raises a
+  warning and marks the run `unrecorded_io` (per-thread detection; a tool
+  spawning threads that do I/O, or coroutines interleaved with a live call,
+  can still slip past — file writes and subprocesses always can).
 - **`datetime.datetime.now()`.** It's a C-level attribute and can't be
   patched; the pin covers `time.time()` / `time.time_ns()` — use those in
   pinned code (or read the clock inside a tool, where the result is recorded).

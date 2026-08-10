@@ -1,0 +1,31 @@
+name: Feature request
+description: An adapter, a consumer of the format, or a missing capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What can't you do today?
+      description: >
+        The concrete situation — the agent you're instrumenting, the failure
+        you're chasing, the framework we don't support yet.
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: What would good look like?
+      description: API sketch, CLI invocation, or just prose. Optional.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - recording / replay
+        - framework adapter
+        - classification / judge
+        - testing / CI gate
+        - cost governor
+        - UI
+        - recording format / interop
+        - other

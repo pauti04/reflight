@@ -304,6 +304,7 @@ class Replayer:
                 "run_end",
                 "error",
                 "entropy",
+                "warning",
             ):
                 cursor += 1
                 continue
@@ -320,7 +321,7 @@ class Replayer:
             if index in self._consumed:
                 continue
             event = self._events[index]
-            if event["type"] in ("run_start", "run_end", "error", "entropy"):
+            if event["type"] in ("run_start", "run_end", "error", "entropy", "warning"):
                 continue
             if event["type"] != expected_type:
                 raise ReplayDivergence(

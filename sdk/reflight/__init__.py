@@ -14,14 +14,17 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+from .aio import AsyncRecorder, AsyncReplayer
 from .events import RunLog, hash_payload, read_events, to_jsonable
 from .fork import ForkSession
 from .governor import Governor, GovernorKill
 from .recorder import Recorder
-from .redact import redact_patterns
+from .redact import redact_common, redact_patterns
 from .replayer import ReplayDivergence, ReplayedToolError, Replayer
 
 __all__ = [
+    "AsyncRecorder",
+    "AsyncReplayer",
     "Recorder",
     "Replayer",
     "ForkSession",
@@ -34,9 +37,12 @@ __all__ = [
     "hash_payload",
     "to_jsonable",
     "record",
+    "record_async",
+    "redact_common",
     "redact_patterns",
     "recording",
     "replay",
+    "replay_async",
     "fork",
 ]
 
@@ -50,6 +56,7 @@ def record(
     governor: Any = None,
     agent_name: str | None = None,
     redact: Any = None,
+    flight_check: bool = False,
 ) -> Recorder:
     """Create a recording session. Sugar over Recorder(...) + start()."""
     session = Recorder(
@@ -59,6 +66,7 @@ def record(
         governor=governor,
         agent_name=agent_name,
         redact=redact,
+        flight_check=flight_check,
     )
     if client is not None:
         session.wrap(client)
@@ -90,6 +98,40 @@ def recording(
 def replay(run_dir: Path | str, step: bool = False) -> Replayer:
     """Open a recorded run for deterministic replay."""
     return Replayer(run_dir, step=step)
+
+
+def record_async(
+    run_dir: Path | str,
+    task: str = "",
+    client: Any = None,
+    tools: dict | None = None,
+    db_path: Path | str | None = None,
+    governor: Any = None,
+    agent_name: str | None = None,
+    redact: Any = None,
+    flight_check: bool = False,
+) -> AsyncRecorder:
+    """record() for asyncio agents — wraps AsyncAnthropic / async OpenAI
+    clients; session.execute and @session.tool are awaitable. Recordings are
+    interchangeable with sync sessions."""
+    session = AsyncRecorder(
+        run_dir,
+        tools=tools,
+        db_path=db_path,
+        governor=governor,
+        agent_name=agent_name,
+        redact=redact,
+        flight_check=flight_check,
+    )
+    if client is not None:
+        session.wrap(client)
+    session.start(task)
+    return session
+
+
+def replay_async(run_dir: Path | str, step: bool = False) -> AsyncReplayer:
+    """replay() with an async facade — for replaying through asyncio agent code."""
+    return AsyncReplayer(run_dir, step=step)
 
 
 def fork(

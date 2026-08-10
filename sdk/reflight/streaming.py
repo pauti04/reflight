@@ -24,14 +24,22 @@ class RecordingStream:
         self._final: Message | None = None
 
     def __enter__(self) -> "RecordingStream":
+        from .flightcheck import session_io
+
+        # stream I/O happens lazily across the whole with-block — keep the
+        # flight-check scope open until __exit__
+        self._io_scope = session_io().__enter__()
         self._manager = self._session._live.messages.stream(**self._kwargs)
         self._inner = self._manager.__enter__()
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        if exc_type is None:
-            self.get_final_message()  # capture + emit even if the agent didn't ask
-        return self._manager.__exit__(exc_type, exc, tb)
+        try:
+            if exc_type is None:
+                self.get_final_message()  # capture + emit even if the agent didn't ask
+            return self._manager.__exit__(exc_type, exc, tb)
+        finally:
+            self._io_scope.__exit__()
 
     @property
     def text_stream(self):

@@ -99,6 +99,7 @@ class Recorder:
         governor: Any = None,
         agent_name: str | None = None,
         redact: Any = None,
+        flight_check: bool = False,
     ):
         self.log = RunLog(run_dir, transform=redact)
         self._live = live_client
@@ -115,6 +116,11 @@ class Recorder:
         self._started = False
         self._ended = False
         self._entropy: dict | None = None
+        self._flight = None
+        if flight_check:
+            from .flightcheck import install
+
+            self._flight = install(self)
 
     # -- auto-instrumentation --------------------------------------------------
 
@@ -137,7 +143,7 @@ class Recorder:
         self._openai = client
         return _WrappedOpenAIClient(self)
 
-    def _openai_create(self, **kwargs: Any):
+    def _openai_pre(self) -> None:
         if self._governor is not None:
             from .governor import GovernorKill
 
@@ -148,12 +154,14 @@ class Recorder:
                 raise
         if self._openai is None:
             raise RuntimeError("no OpenAI client: call session.wrap_openai(client) first")
+
+    def _openai_emit(self, kwargs: dict, response: Any) -> None:
         request = to_jsonable(kwargs)
-        response = self._openai.chat.completions.create(**kwargs)
         data = response.model_dump(mode="json") if hasattr(response, "model_dump") else dict(response)
         usage = data.get("usage") or {}
-        self.total_input_tokens += usage.get("prompt_tokens") or 0
-        self.total_output_tokens += usage.get("completion_tokens") or 0
+        with self._totals_lock:
+            self.total_input_tokens += usage.get("prompt_tokens") or 0
+            self.total_output_tokens += usage.get("completion_tokens") or 0
         self.log.emit(
             "llm_call",
             provider="openai",
@@ -161,6 +169,14 @@ class Recorder:
             request_hash=hash_payload(request),
             response=data,
         )
+
+    def _openai_create(self, **kwargs: Any):
+        self._openai_pre()
+        from .flightcheck import session_io
+
+        with session_io():
+            response = self._openai.chat.completions.create(**kwargs)
+        self._openai_emit(kwargs, response)
         return response
 
     def tool(self, fn: ToolFn) -> ToolFn:
@@ -215,6 +231,9 @@ class Recorder:
         if self._ended:
             return
         self._ended = True
+        if self._flight is not None:  # before ingest — the DB write may be I/O
+            self._flight.uninstall()
+            self._flight = None
         if self._entropy is not None and any(self._entropy.values()):
             self.log.emit("entropy", **self._entropy)
         self.log.emit(
@@ -270,7 +289,10 @@ class Recorder:
 
     def _llm_create(self, **kwargs: Any):
         self._pre_llm()
-        response = self._live.messages.create(**kwargs)
+        from .flightcheck import session_io
+
+        with session_io():
+            response = self._live.messages.create(**kwargs)
         self._emit_llm_call(kwargs, response.model_dump(mode="json"))
         return response
 
@@ -280,19 +302,46 @@ class Recorder:
 
         return RecordingStream(self, kwargs)
 
-    def _run_tool(
-        self, name: str, tool_input: dict, tool_use_id: str
-    ) -> tuple[str, bool, BaseException | None]:
-        input_hash = hash_payload(tool_input)
-        cached = None
+    def _tool_pre(self, name: str, input_hash: str) -> tuple[str, bool] | None:
+        """Governor gate; returns the cached (result, is_error) if served."""
         if self._governor is not None:
             from .governor import GovernorKill
 
             try:
-                cached = self._governor.before_tool(name, input_hash)
+                return self._governor.before_tool(name, input_hash)
             except GovernorKill as kill:
                 self._kill(kill)
                 raise
+        return None
+
+    def _tool_post(
+        self,
+        name: str,
+        tool_input: dict,
+        input_hash: str,
+        tool_use_id: str,
+        result: Any,
+        is_error: bool,
+        from_cache: bool,
+    ) -> None:
+        if not from_cache and self._governor is not None:
+            self._governor.after_tool(name, input_hash, result, is_error)
+        self.log.emit(
+            "tool_call",
+            name=name,
+            input=to_jsonable(tool_input),
+            input_hash=input_hash,
+            tool_use_id=tool_use_id,
+            result=result,
+            is_error=is_error,
+            **({"cached": True} if from_cache else {}),
+        )
+
+    def _run_tool(
+        self, name: str, tool_input: dict, tool_use_id: str
+    ) -> tuple[str, bool, BaseException | None]:
+        input_hash = hash_payload(tool_input)
+        cached = self._tool_pre(name, input_hash)
         exc: BaseException | None = None
         from_cache = cached is not None
         if from_cache:
@@ -309,18 +358,7 @@ class Recorder:
                         result, is_error = fn(**tool_input), False
                 except Exception as e:  # tool failures are data to record, not crashes
                     exc, result, is_error = e, f"{type(e).__name__}: {e}", True
-            if self._governor is not None:
-                self._governor.after_tool(name, input_hash, result, is_error)
-        self.log.emit(
-            "tool_call",
-            name=name,
-            input=to_jsonable(tool_input),
-            input_hash=input_hash,
-            tool_use_id=tool_use_id,
-            result=result,
-            is_error=is_error,
-            **({"cached": True} if from_cache else {}),
-        )
+        self._tool_post(name, tool_input, input_hash, tool_use_id, result, is_error, from_cache)
         return result, is_error, exc
 
     def execute(self, name: str, tool_input: dict, tool_use_id: str) -> tuple[str, bool]:

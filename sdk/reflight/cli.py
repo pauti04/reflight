@@ -171,7 +171,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
 
 
 def cmd_judge(args: argparse.Namespace) -> int:
-    from .judge import JUDGE_MODEL, judge_run
+    from .judge import JUDGE_MODEL, judge_ensemble, judge_run
 
     events = [e for e, _ in store.get_events(args.db, args.run_id)]
     if not events:
@@ -180,9 +180,15 @@ def cmd_judge(args: argparse.Namespace) -> int:
 
     import anthropic
 
-    result = judge_run(events, anthropic.Anthropic(), model=args.model or JUDGE_MODEL)
+    model = args.model or JUDGE_MODEL
+    if args.votes > 1:
+        result = judge_ensemble(events, anthropic.Anthropic(), votes=args.votes, model=model)
+        panel = f" · {args.votes} votes, {result['agreement']:.0%} agreement"
+    else:
+        result = judge_run(events, anthropic.Anthropic(), model=model)
+        panel = ""
     icon = "✓" if result["ok"] else "✗"
-    print(f"{icon} {result['label']} (conf {result['confidence']:.2f}): {result['reasoning']}")
+    print(f"{icon} {result['label']} (conf {result['confidence']:.2f}{panel}): {result['reasoning']}")
     if not result["ok"]:
         end_seq = next(e["seq"] for e in reversed(events) if e["type"] == "run_end")
         store.add_finding(
@@ -286,6 +292,9 @@ def main(argv: list[str] | None = None) -> int:
     p_judge = sub.add_parser("judge", help="LLM-judge a run (needs Anthropic credentials)")
     p_judge.add_argument("run_id")
     p_judge.add_argument("--model", default=None)
+    p_judge.add_argument(
+        "--votes", type=int, default=1, help="judge passes; majority verdict (default 1)"
+    )
     p_judge.set_defaults(fn=cmd_judge)
 
     p_export = sub.add_parser(

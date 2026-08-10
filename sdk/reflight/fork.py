@@ -120,7 +120,7 @@ class ForkSession:
         cursor = self._cursor
         while cursor < len(self._events):
             event = self._events[cursor]
-            if event["type"] in ("run_start", "run_end", "error", "entropy"):
+            if event["type"] in ("run_start", "run_end", "error", "entropy", "warning"):
                 cursor += 1
                 continue
             if event["seq"] >= self.at_seq:

@@ -42,6 +42,21 @@ def classify(events: list[dict], max_output_tokens: int = 20_000) -> list[Findin
     tool_calls = [e for e in events if e["type"] == "tool_call"]
     end = next((e for e in events if e["type"] == "run_end"), None)
 
+    # flight-check warnings: I/O the recording doesn't contain — the run may
+    # not replay faithfully, which is worth a warn even when everything passed
+    for event in events:
+        if event["type"] == "warning" and event.get("kind") == "unrecorded_io":
+            findings.append(
+                Finding(
+                    "unrecorded_io",
+                    WARN,
+                    0.9,
+                    event["seq"],
+                    event["detail"],
+                    signature=f"unrecorded_io:{event.get('host', '')}",
+                )
+            )
+
     # crash: the agent process raised; governor kills get their own label so
     # the dashboard shows the save, not a generic crash
     for event in events:

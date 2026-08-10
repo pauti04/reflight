@@ -62,6 +62,11 @@ project works.
 - **docker compose** — files written, unverified (docker daemon not running).
 - **UI replay/fork controls** — timeline has keyboard stepping; live fork from
   the UI needs an agent-execution bridge (post-launch).
+- **Async gaps** — `record_async`/`replay_async` cover create-style calls and
+  tools; fork mode and the `messages.stream()` helper are sync-only for now.
+- **Flight check scope** — per-thread socket detection; threads spawned by
+  tools and interleaved coroutines can escape; file/subprocess side effects
+  are out of scope (see docs/limits.md).
 
 ## Naming
 

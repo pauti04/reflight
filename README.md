@@ -39,10 +39,11 @@ the whole reliability loop on top:
 
 | | |
 |---|---|
-| 🎥 **Record** | Every LLM call, tool call, token and dollar — 3 added lines |
+| 🎥 **Record** | Every LLM call, tool call, token and dollar — 3 added lines, sync or asyncio (`record_async`) |
 | ⏪ **Replay** | Re-run any recording byte-identically: offline, ~7ms, $0.00 |
 | 🔍 **Debug** | Timeline UI with event inspector; `--step` CLI debugger; run-diff with first-divergence highlighting |
-| 🏷 **Classify** | Rule-based failure labels (loop, wrong_tool_args, cascade, crash, runaway) + optional LLM judge |
+| 🏷 **Classify** | Rule-based failure labels (loop, wrong_tool_args, cascade, crash, runaway) + LLM judge with ensemble voting (`--votes 3`) |
+| 🛂 **Flight check** | `flight_check=True` flags network I/O that bypassed the session — the run is marked `unrecorded_io` instead of silently un-replayable |
 | 🔱 **Fork** | Replay to step N, go live after — test a fix mid-run |
 | ✅ **Promote** | One command: recorded failure → editable YAML regression test |
 | 📊 **Harness** | N-run consistency scoring, baselines, CI gate that blocks reliability regressions |
@@ -231,7 +232,7 @@ sdk/reflight/    the library: recorder, replayer, fork, classify, judge,
                    store (SQLite), server (FastAPI), cli
 ui/                Next.js timeline UI
 examples/          research agent, quickstart, flaky fleet + demos
-tests/             the whole story as pytest (47 tests)
+tests/             the whole story as pytest (100+ tests)
 docs/              quickstart, concepts, blog drafts
 ```
 

@@ -1,0 +1,36 @@
+name: Bug report
+description: Something recorded, replayed, or classified wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The fastest path to a fix is a recording. Redact first if needed:
+        `reflight.record(dir, redact=reflight.redact_common())`.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what did Reflight do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: recording
+    attributes:
+      label: Recording or divergence message
+      description: >
+        Attach the run's events.jsonl (drag & drop), or paste the
+        ReplayDivergence / classifier output if the recording can't be shared.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Reflight version
+      placeholder: "0.1.0 (pip show reflight)"
+    validations:
+      required: true
+  - type: input
+    id: stack
+    attributes:
+      label: Agent stack
+      placeholder: "e.g. Anthropic SDK 0.40 / LangGraph / MCP, Python 3.13, macOS"

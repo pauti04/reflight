@@ -20,6 +20,7 @@ agent code is identical in every mode; only the session changes:
 | `Replayer` | serve everything from a recording; verify request hashes; never touch the network |
 | `ForkSession` | replay to seq N, go live after — the fork writes a complete new recording |
 | (governed `Recorder`) | same as Recorder plus budgets, loop breaker, cache |
+| `AsyncRecorder` / `AsyncReplayer` | the same facades for asyncio agents (`record_async` / `replay_async`); recordings are interchangeable with sync sessions |
 
 That symmetry is the whole trick: deterministic replay is possible because
 the world is injected, not reached for. Entropy the agent-loop code reaches

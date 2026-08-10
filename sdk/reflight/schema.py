@@ -15,6 +15,7 @@ REQUIRED_FIELDS: dict[str, set[str]] = {
     "state_snapshot": {"label", "state", "state_hash"},
     "error": {"error_type", "message"},
     "entropy": {"seeds", "time", "time_ns", "uuid"},
+    "warning": {"kind", "detail"},
     "run_end": {"status", "final_text", "input_tokens", "output_tokens"},
 }
 

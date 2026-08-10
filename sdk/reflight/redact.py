@@ -45,3 +45,30 @@ def redact_patterns(*patterns: str, mask: str = MASK) -> Callable[[dict], dict]:
         return scrubbed
 
     return transform
+
+
+# The shapes that actually leak through tool results in practice. Deliberately
+# conservative: matching too much silently corrupts recordings, and a missed
+# secret is visible in review while an over-eager mask is not.
+COMMON_PATTERNS: dict[str, str] = {
+    "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    "us_phone": r"\b(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b",
+    "us_ssn": r"\b\d{3}-\d{2}-\d{4}\b",
+    "credit_card": r"\b(?:\d[ -]?){13,15}\d\b",
+    "bearer_token": r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{16,}",
+    "openai_key": r"\bsk-[A-Za-z0-9_-]{20,}\b",
+    "anthropic_key": r"\bsk-ant-[A-Za-z0-9_-]{20,}\b",
+    "aws_access_key": r"\bAKIA[0-9A-Z]{16}\b",
+    "github_token": r"\bgh[pousr]_[A-Za-z0-9]{36,}\b",
+    "private_key_block": r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----",
+}
+
+
+def redact_common(*extra: str, mask: str = MASK) -> Callable[[dict], dict]:
+    """redact_patterns preloaded with COMMON_PATTERNS (emails, phones, SSNs,
+    card numbers, bearer tokens, well-known API-key shapes, private-key
+    blocks). Pass extra patterns for anything domain-specific:
+
+        session = reflight.record(..., redact=reflight.redact_common(r"CUST-\\d+"))
+    """
+    return redact_patterns(*COMMON_PATTERNS.values(), *extra, mask=mask)

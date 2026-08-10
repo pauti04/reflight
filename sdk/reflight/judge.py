@@ -84,3 +84,45 @@ def judge_run(events: list[dict], client: Any, model: str = JUDGE_MODEL) -> dict
         "confidence": float(verdict.get("confidence", 0.5)),
         "reasoning": str(verdict.get("reasoning", "")),
     }
+
+
+def judge_ensemble(
+    events: list[dict], client: Any, votes: int = 3, model: str = JUDGE_MODEL
+) -> dict:
+    """N independent judge passes, majority verdict.
+
+    A single judge pass is exactly as nondeterministic as the agents it
+    judges — on one recorded failure our case study measured the same judge
+    catching 5/5, then 3/5, then 1/5 (docs/case-study.md). Voting trades a
+    few cheap re-reads of the recording for a stable verdict.
+
+    Returns the judge_run shape plus "votes" (the individual passes) and
+    "agreement" (fraction that voted with the majority). Confidence is the
+    majority's mean confidence scaled by agreement, so a split panel is
+    never more confident than a unanimous one. Ties break toward not-ok:
+    a verdict worth acting on should win outright.
+    """
+    if votes < 1:
+        raise ValueError("votes must be >= 1")
+    passes = [judge_run(events, client, model=model) for _ in range(votes)]
+    not_ok = [p for p in passes if not p["ok"]]
+    majority = not_ok if len(not_ok) * 2 >= len(passes) else [p for p in passes if p["ok"]]
+    agreement = len(majority) / len(passes)
+    # the majority's most common label; ties break toward higher confidence
+    labels = sorted(
+        {p["label"] for p in majority},
+        key=lambda one: (
+            sum(p["label"] == one for p in majority),
+            max(p["confidence"] for p in majority if p["label"] == one),
+        ),
+        reverse=True,
+    )
+    winner = [p for p in majority if p["label"] == labels[0]]
+    return {
+        "ok": majority[0]["ok"],
+        "label": labels[0],
+        "confidence": (sum(p["confidence"] for p in winner) / len(winner)) * agreement,
+        "reasoning": max(winner, key=lambda p: p["confidence"])["reasoning"],
+        "votes": passes,
+        "agreement": agreement,
+    }
