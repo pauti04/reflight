@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   API,
   BASE,
+  LABEL_HELP,
   STATIC,
   fetchRecurring,
   fmtCost,
@@ -63,8 +64,14 @@ export default function ReliabilityPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-slate-900">
-        Reliability <span className="text-slate-500">— consistency by task</span>
+        Reliability <span className="text-slate-500">— does the agent succeed every time?</span>
       </h1>
+      <p className="max-w-3xl text-sm text-slate-500">
+        AI agents rarely behave the same way twice. Each card below scores one
+        agent across repeated recorded runs: how often it truly succeeded, and
+        what went wrong when it didn't. Hover any red label for a plain-English
+        explanation.
+      </p>
 
       {recurring.length > 0 && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
@@ -74,7 +81,10 @@ export default function ReliabilityPage() {
           <ul className="space-y-2">
             {recurring.map((bug) => (
               <li key={bug.signature} className="text-sm">
-                <span className="mr-2 rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs text-red-700">
+                <span
+                  title={LABEL_HELP[bug.label] ?? bug.label}
+                  className="mr-2 cursor-help rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs text-red-700"
+                >
                   {bug.label} ×{bug.count}
                 </span>
                 <span className="text-slate-700">{bug.detail}</span>
@@ -169,7 +179,10 @@ export default function ReliabilityPage() {
             <div className="mt-3 space-y-1">
               {Object.entries(report.failure_histogram).map(([label, count]) => (
                 <div key={label} className="flex items-center gap-3">
-                  <span className="w-40 shrink-0 truncate text-right font-mono text-xs text-red-600">
+                  <span
+                    title={LABEL_HELP[label] ?? label}
+                    className="w-40 shrink-0 cursor-help truncate text-right font-mono text-xs text-red-600"
+                  >
                     {label}
                   </span>
                   <div className="grow">

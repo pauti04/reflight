@@ -118,6 +118,22 @@ export const parseLabels = (labels: string | null): string[] => {
   }
 };
 
+// plain-English translations for failure labels — shown as tooltips so a
+// visitor who has never seen an agent framework can still follow along
+export const LABEL_HELP: Record<string, string> = {
+  loop: "the AI repeated the same failing action over and over",
+  wrong_tool_args: "the AI passed invalid data to one of its tools",
+  tool_error: "one of the agent's tools returned an error",
+  tool_error_cascade: "several tool calls in a row failed",
+  crash: "the agent's code raised an exception and stopped",
+  runaway: "the agent kept going far longer than it should have",
+  cost_blowout: "the run spent far more money than normal",
+  governor_kill: "Reflight's budget kill-switch stopped a runaway agent",
+  judge_wrong_answer: "an AI reviewer read the transcript and found the final answer wrong",
+  wrong_slot: "the agent booked a different time than the task required",
+  unrecorded_io: "the agent touched the network outside the recording",
+};
+
 export const verdictStyle: Record<string, string> = {
   pass: "bg-emerald-100 text-emerald-800",
   warn: "bg-amber-100 text-amber-800",

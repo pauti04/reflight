@@ -7,6 +7,7 @@ import FdrPanel from "@/components/fdr-panel";
 import LoopTabs from "@/components/loop-tabs";
 import {
   API,
+  LABEL_HELP,
   STATIC,
   fetchRuns,
   fmtCost,
@@ -19,22 +20,30 @@ import {
 
 type VerdictFilter = "all" | "pass" | "warn" | "fail";
 
-const BUG_TRAIL = [
-  { href: "/reliability", label: "6 agents, 24 runs", sub: "the scoreboard" },
+const STORY = [
   {
+    n: "1",
     href: "/runs/refund-01",
-    label: "the refund API rejects every call",
-    sub: "amount sent as a string",
+    title: "An AI agent fumbles a refund",
+    sub: "It sends $49.99 as text instead of a number — the refund system rejects it, and the AI retries the same broken call three times.",
   },
   {
+    n: "2",
     href: "/diff?a=refund-00&b=refund-01",
-    label: "the diff shows why",
-    sub: '49.99 vs "$49.99"',
+    title: "The diff pinpoints the bug",
+    sub: "A passing attempt and the failing one, side by side — identical until step 5, where the difference is highlighted.",
   },
   {
+    n: "3",
+    href: "/reliability",
+    title: "Reflight spots it recurring",
+    sub: "The same mistake shows up in another customer's run — one fingerprint links them as a single bug.",
+  },
+  {
+    n: "4",
     href: "/runs/refund-runaway",
-    label: "runaway killed at $2.00",
-    sub: "gateway never settles",
+    title: "A runaway is stopped at $2.00",
+    sub: "Another agent retried forever; Reflight's budget kill-switch ended the run and recorded exactly why.",
   },
 ];
 
@@ -81,14 +90,24 @@ function Landing() {
             <br />
             <span className="text-indigo-600">By morning, the failure was gone.</span>
           </h1>
-          <p className="mt-4 text-slate-500">
-            Reflight records every run an agent makes, replays any of them
-            deterministically, and turns the failures into regression tests.
+          <p className="mt-4 text-slate-600">
+            An AI agent is a program that lets an AI take real actions — look
+            up an order, issue a refund, book a meeting. When one misbehaves,
+            there is usually no record of what it did or why.{" "}
+            <span className="font-medium text-slate-900">
+              Reflight is the black box
+            </span>
+            : it records every step an agent takes, replays any run exactly as
+            it happened, and turns failures into tests so they can never
+            quietly return.
+          </p>
+          <p className="mt-3 text-sm text-slate-500">
             The panel on the right is a{" "}
-            <span className="text-slate-900">real recording, replaying now</span>:
-            a support agent processing a damage claim sends the refund amount as
-            a string, and retries the same broken call until it gives up.
-            Caught, labeled, reproducible. Nothing here is mocked.
+            <span className="text-slate-800">real recording, replaying now</span>:
+            an AI support agent handling a damaged-order refund. Lines marked
+            LLM are the AI deciding what to do; lines marked TOOL are those
+            decisions actually executing. Watch it send the amount as text —
+            and fail three times. Nothing here is mocked.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
@@ -115,23 +134,27 @@ function Landing() {
 
       <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
         <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
-          follow one bug through the system
+          the story in this demo — follow one bug end to end
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {BUG_TRAIL.map((stop, i) => (
-            <span key={stop.href} className="flex items-center gap-2">
-              <Link
-                href={stop.href}
-                className="group rounded-md border border-slate-200 bg-white px-3 py-2
-                           transition-colors hover:border-indigo-400"
-              >
-                <span className="block text-sm text-slate-800 group-hover:text-indigo-700">
-                  {stop.label}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {STORY.map((stop) => (
+            <Link
+              key={stop.href}
+              href={stop.href}
+              className="group rounded-md border border-slate-200 bg-white p-3
+                         transition-colors hover:border-indigo-400"
+            >
+              <div className="mb-1 flex items-baseline gap-2">
+                <span className="font-mono text-xs text-indigo-600">{stop.n}</span>
+                <span
+                  className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {stop.title}
                 </span>
-                <span className="block font-mono text-xs text-slate-500">{stop.sub}</span>
-              </Link>
-              {i < BUG_TRAIL.length - 1 && <span className="text-slate-400">→</span>}
-            </span>
+              </div>
+              <p className="text-xs leading-relaxed text-slate-500">{stop.sub}</p>
+            </Link>
           ))}
         </div>
       </div>
@@ -218,6 +241,9 @@ export default function RunsPage() {
       <Landing />
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-lg font-semibold">Runs</h1>
+        <span className="hidden text-sm text-slate-500 md:inline">
+          every row is one recorded agent session — click it to replay what the AI did
+        </span>
         <span className="font-mono text-xs text-slate-500">
           {visible.length} shown · {Math.round(passRate * 100)}% pass ·{" "}
           {fmtMoney(totalCost)} total
@@ -311,7 +337,8 @@ export default function RunsPage() {
                       .map((label) => (
                         <span
                           key={label}
-                          className="rounded bg-red-50 px-1.5 py-0.5 text-xs font-mono text-red-700"
+                          title={LABEL_HELP[label] ?? label}
+                          className="cursor-help rounded bg-red-50 px-1.5 py-0.5 text-xs font-mono text-red-700"
                         >
                           {label}
                         </span>

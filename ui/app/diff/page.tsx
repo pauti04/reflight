@@ -154,6 +154,12 @@ function DiffView() {
     <div>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">Run diff</h1>
+        <p className="mb-1 max-w-3xl text-sm text-slate-500">
+          Two attempts at the same job, step by step. White rows are identical;
+          the red row is the exact moment they part ways — the highlighted text
+          is the difference that caused one to fail. Faded rows are the
+          aftermath.
+        </p>
         <p className="text-sm text-slate-600">
           {diff.identical ? (
             "The runs are identical."

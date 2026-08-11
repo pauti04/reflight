@@ -84,6 +84,11 @@ export default function CostsPage() {
         <span className="font-mono text-2xl text-slate-900">{fmtMoney(costs.total_usd)}</span>
         <span className="text-sm text-slate-500">across {costs.runs} runs</span>
       </div>
+      <p className="max-w-3xl text-sm text-slate-500">
+        Every AI decision costs money — each model call is billed by the token.
+        This page breaks down what each agent and task actually spent, computed
+        from the recordings. Replaying any of it costs nothing.
+      </p>
 
       {costs.anomalies.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">

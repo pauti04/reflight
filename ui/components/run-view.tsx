@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   BASE,
+  LABEL_HELP,
   STATIC,
   fetchEvents,
   fetchRun,
@@ -344,6 +345,16 @@ export default function RunView({ id }: { id: string }) {
         )}
       </div>
 
+      <p className="mb-4 max-w-3xl text-sm text-slate-500">
+        This is the black-box tape of one agent run. Each row below is one
+        recorded step: <span className="text-violet-600">purple</span> is the
+        AI deciding what to do,{" "}
+        <span className="text-emerald-600">green</span> is that decision
+        actually executing, and <span className="text-red-600">red</span> is a
+        failure. Click any step to inspect it, or press REPLAY to watch the
+        run unfold.
+      </p>
+
       {promoteError && (
         <p className="mb-4 font-mono text-xs text-red-400">{promoteError}</p>
       )}
@@ -392,7 +403,8 @@ export default function RunView({ id }: { id: string }) {
                     className="text-left hover:underline"
                   >
                     <span
-                      className={`mr-2 rounded px-1.5 py-0.5 font-mono text-xs ${
+                      title={LABEL_HELP[f.label] ?? f.label}
+                      className={`mr-2 cursor-help rounded px-1.5 py-0.5 font-mono text-xs ${
                         f.severity === "fail"
                           ? "bg-red-100 text-red-700"
                           : "bg-amber-100 text-amber-800"
