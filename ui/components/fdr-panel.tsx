@@ -95,11 +95,11 @@ export default function FdrPanel() {
     <Link
       href={`/runs/${RUN_ID}`}
       className="instrument block rounded-lg border border-slate-800 bg-slate-950 font-mono text-xs
-                 transition-colors hover:border-cyan-800"
+                 transition-colors hover:border-indigo-400"
     >
       <div className="flex items-center gap-2 border-b border-slate-800/80 px-4 py-2">
-        <span className="rec-dot h-2 w-2 rounded-full bg-cyan-500" />
-        <span className="tracking-widest text-cyan-400">
+        <span className="rec-dot h-2 w-2 rounded-full bg-indigo-400" />
+        <span className="tracking-widest text-indigo-300">
           {done ? "REPLAY FROM RECORDING" : "RECORDING"}
         </span>
         <span className="ml-auto text-slate-600">
@@ -129,7 +129,7 @@ export default function FdrPanel() {
           );
         })}
         {!done && (
-          <span className="rec-dot inline-block h-3 w-1.5 bg-cyan-500 align-text-bottom" />
+          <span className="rec-dot inline-block h-3 w-1.5 bg-indigo-400 align-text-bottom" />
         )}
       </div>
 
@@ -154,7 +154,7 @@ export default function FdrPanel() {
               }}
               className={`h-2 flex-1 rounded-sm transition-all hover:h-3 ${
                 i === shown - 1
-                  ? "h-3 bg-cyan-500"
+                  ? "h-3 bg-indigo-400"
                   : lit
                     ? tone === "bad"
                       ? "bg-red-700"
@@ -190,7 +190,7 @@ export default function FdrPanel() {
                 e.stopPropagation();
                 setScrubbed(false);
               }}
-              className="rounded border border-slate-700 px-1.5 text-cyan-400 hover:border-cyan-800"
+              className="rounded border border-slate-700 px-1.5 text-indigo-300 hover:border-indigo-400"
             >
               RESUME
             </button>

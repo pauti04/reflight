@@ -87,8 +87,8 @@ export default function LoopTabs() {
   const { text } = tab.body(promotedYaml);
 
   return (
-    <div className="instrument rounded-lg border border-slate-800 bg-slate-950/80">
-      <div className="flex border-b border-slate-800/80">
+    <div className="instrument overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="flex border-b border-slate-200">
         {TABS.map((t, i) => (
           <button
             key={t.key}
@@ -97,40 +97,40 @@ export default function LoopTabs() {
               setPinned(true);
             }}
             className={`relative flex-1 px-4 py-3 text-left transition-colors ${
-              i === active ? "bg-slate-900/60" : "hover:bg-slate-900/40"
+              i === active ? "bg-slate-50" : "hover:bg-slate-50/60"
             }`}
           >
             <span
               className={`mr-2 font-mono text-xs ${
-                i === active ? "text-cyan-400" : "text-slate-600"
+                i === active ? "text-indigo-600" : "text-slate-400"
               }`}
             >
               {t.n}
             </span>
             <span
               className={`text-sm font-semibold ${
-                i === active ? "text-slate-100" : "text-slate-500"
+                i === active ? "text-slate-900" : "text-slate-500"
               }`}
               style={{ fontFamily: "var(--font-display)" }}
             >
               {t.title}
             </span>
             {i === active && !pinned && (
-              <span className="tab-progress absolute bottom-0 left-0 h-px bg-cyan-600/80" />
+              <span className="tab-progress absolute bottom-0 left-0 h-px bg-indigo-500" />
             )}
             {i === active && pinned && (
-              <span className="absolute bottom-0 left-0 h-px w-full bg-cyan-600/80" />
+              <span className="absolute bottom-0 left-0 h-px w-full bg-indigo-500" />
             )}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-0 md:grid-cols-[240px_1fr]">
-        <div className="border-b border-slate-800/60 p-4 md:border-b-0 md:border-r">
-          <p className="text-sm leading-relaxed text-slate-300">{tab.claim}</p>
-          <p className="mt-3 font-mono text-xs leading-relaxed text-slate-600">{tab.proof}</p>
+        <div className="border-b border-slate-200 p-4 md:border-b-0 md:border-r">
+          <p className="text-sm leading-relaxed text-slate-700">{tab.claim}</p>
+          <p className="mt-3 font-mono text-xs leading-relaxed text-slate-500">{tab.proof}</p>
         </div>
-        <pre className="overflow-x-auto p-4 font-mono text-xs leading-6 text-slate-300">
+        <pre className="overflow-x-auto bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-300">
           {text.split("\n").map((line, i) => (
             <div
               key={i}
@@ -138,7 +138,7 @@ export default function LoopTabs() {
                 line.startsWith("#")
                   ? "text-slate-600"
                   : line.startsWith("$")
-                    ? "text-cyan-300"
+                    ? "text-indigo-300"
                     : line.includes("TypeError") || line.includes("ReplayDivergence")
                       ? "text-red-400"
                       : line.includes("HASH OK") ||

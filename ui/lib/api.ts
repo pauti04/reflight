@@ -119,9 +119,9 @@ export const parseLabels = (labels: string | null): string[] => {
 };
 
 export const verdictStyle: Record<string, string> = {
-  pass: "bg-emerald-900/60 text-emerald-300",
-  warn: "bg-amber-900/60 text-amber-300",
-  fail: "bg-red-900/60 text-red-300",
+  pass: "bg-emerald-100 text-emerald-800",
+  warn: "bg-amber-100 text-amber-800",
+  fail: "bg-red-100 text-red-700",
 };
 
 export const fmtCost = (c: number | null | undefined) =>

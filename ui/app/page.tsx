@@ -20,7 +20,7 @@ import {
 type VerdictFilter = "all" | "pass" | "warn" | "fail";
 
 const BUG_TRAIL = [
-  { href: "/reliability", label: "3 agents, 19 runs", sub: "the scoreboard" },
+  { href: "/reliability", label: "6 agents, 24 runs", sub: "the scoreboard" },
   {
     href: "/runs/refund-01",
     label: "the refund API rejects every call",
@@ -38,22 +38,54 @@ const BUG_TRAIL = [
   },
 ];
 
+function StatsBar() {
+  const [stats, setStats] = useState<{ runs: number; agents: number; cost: number } | null>(null);
+  useEffect(() => {
+    fetchRuns()
+      .then((runs) =>
+        setStats({
+          runs: runs.length,
+          agents: new Set(runs.map((r) => r.agent ?? r.task)).size,
+          cost: runs.reduce((sum, r) => sum + (r.cost_usd ?? 0), 0),
+        }),
+      )
+      .catch(() => setStats(null));
+  }, []);
+  if (!stats) return null;
+  const cells: [string, string][] = [
+    [String(stats.runs), "recorded runs"],
+    [String(stats.agents), "agents"],
+    [fmtMoney(stats.cost), "total recorded spend"],
+    ["$0.00", "to replay all of it"],
+  ];
+  return (
+    <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 border-t border-slate-200 pt-4">
+      {cells.map(([value, label]) => (
+        <div key={label}>
+          <div className="font-mono text-lg font-semibold text-slate-900">{value}</div>
+          <div className="text-xs text-slate-500">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Landing() {
   if (!STATIC) return null;
   return (
     <div className="gridbg -mx-6 mb-10 px-6">
       <div className="grid grid-cols-1 items-center gap-8 py-8 lg:grid-cols-2">
         <div>
-          <h1 className="text-3xl font-bold leading-tight text-slate-50">
+          <h1 className="text-3xl font-bold leading-tight text-slate-900">
             Your agent failed at 2 a.m.
             <br />
-            <span className="text-cyan-400">By morning, the failure was gone.</span>
+            <span className="text-indigo-600">By morning, the failure was gone.</span>
           </h1>
-          <p className="mt-4 text-slate-400">
+          <p className="mt-4 text-slate-500">
             Reflight records every run an agent makes, replays any of them
             deterministically, and turns the failures into regression tests.
             The panel on the right is a{" "}
-            <span className="text-slate-200">real recording, replaying now</span>:
+            <span className="text-slate-900">real recording, replaying now</span>:
             a support agent processing a damage claim sends the refund amount as
             a string, and retries the same broken call until it gives up.
             Caught, labeled, reproducible. Nothing here is mocked.
@@ -61,26 +93,27 @@ function Landing() {
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/runs/refund-01"
-              className="rounded-md bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950
-                         transition-colors hover:bg-cyan-400"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white
+                         transition-colors hover:bg-indigo-500"
             >
               Step through this failure
             </Link>
             <Link
               href="/diff?a=refund-00&b=refund-01"
-              className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200
-                         transition-colors hover:border-cyan-700 hover:text-cyan-200"
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-800
+                         transition-colors hover:border-indigo-400 hover:text-indigo-700"
             >
               Spot a bug in one diff
             </Link>
           </div>
+          <StatsBar />
         </div>
         <FdrPanel />
       </div>
 
       <LoopTabs />
 
-      <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
+      <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
         <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
           follow one bug through the system
         </p>
@@ -89,15 +122,15 @@ function Landing() {
             <span key={stop.href} className="flex items-center gap-2">
               <Link
                 href={stop.href}
-                className="group rounded-md border border-slate-800 bg-slate-950 px-3 py-2
-                           transition-colors hover:border-cyan-800"
+                className="group rounded-md border border-slate-200 bg-white px-3 py-2
+                           transition-colors hover:border-indigo-400"
               >
-                <span className="block text-sm text-slate-200 group-hover:text-cyan-200">
+                <span className="block text-sm text-slate-800 group-hover:text-indigo-700">
                   {stop.label}
                 </span>
-                <span className="block font-mono text-xs text-slate-600">{stop.sub}</span>
+                <span className="block font-mono text-xs text-slate-500">{stop.sub}</span>
               </Link>
-              {i < BUG_TRAIL.length - 1 && <span className="text-slate-700">→</span>}
+              {i < BUG_TRAIL.length - 1 && <span className="text-slate-400">→</span>}
             </span>
           ))}
         </div>
@@ -158,20 +191,20 @@ export default function RunsPage() {
 
   if (error)
     return (
-      <div className="text-slate-400">
-        <p className="text-red-400 font-mono mb-2">cannot reach the API</p>
+      <div className="text-slate-500">
+        <p className="text-red-600 font-mono mb-2">cannot reach the API</p>
         <p>
-          Start it with <code className="text-slate-200">reflight serve</code>{" "}
-          (expected at <code className="text-slate-200">{API}</code>)
+          Start it with <code className="text-slate-800">reflight serve</code>{" "}
+          (expected at <code className="text-slate-800">{API}</code>)
         </p>
       </div>
     );
   if (!runs) return <p className="text-slate-500">loading…</p>;
   if (runs.length === 0)
     return (
-      <p className="text-slate-400">
+      <p className="text-slate-500">
         No runs recorded yet — record one, then{" "}
-        <code className="text-slate-200">reflight import</code>.
+        <code className="text-slate-800">reflight import</code>.
       </p>
     );
 
@@ -194,8 +227,8 @@ export default function RunsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="/ search id, task, label"
-          className="w-56 rounded border border-slate-800 bg-slate-900/60 px-3 py-1 text-sm
-                     text-slate-200 placeholder-slate-600 outline-none focus:border-slate-600"
+          className="w-56 rounded border border-slate-300 bg-white px-3 py-1 text-sm
+                     text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400"
         />
         <div className="flex gap-1">
           {(["all", "pass", "warn", "fail"] as const).map((v) => (
@@ -204,8 +237,8 @@ export default function RunsPage() {
               onClick={() => setVerdict(v)}
               className={`rounded px-2 py-0.5 font-mono text-xs ${
                 verdict === v
-                  ? (verdictStyle[v] ?? "bg-slate-700 text-slate-100") + " ring-1 ring-slate-500"
-                  : "bg-slate-900 text-slate-500 hover:text-slate-300"
+                  ? (verdictStyle[v] ?? "bg-slate-700 text-slate-100") + " ring-1 ring-slate-400"
+                  : "bg-slate-100 text-slate-500 hover:text-slate-800"
               }`}
             >
               {v} {counts[v]}
@@ -216,15 +249,15 @@ export default function RunsPage() {
           disabled={picked.length !== 2}
           onClick={() => router.push(`/diff?a=${picked[0]}&b=${picked[1]}`)}
           className="ml-auto rounded border border-slate-700 px-3 py-1 text-xs font-mono
-                     text-slate-300 enabled:hover:bg-slate-800 disabled:opacity-40"
+                     text-slate-700 enabled:hover:bg-slate-100 disabled:opacity-40"
         >
           diff {picked.length}/2
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-800">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-slate-900 text-slate-400 text-left">
+          <thead className="bg-slate-100 text-slate-600 text-left">
             <tr>
               <th className="px-3 py-2"></th>
               <th className="px-4 py-2 font-medium">run</th>
@@ -241,20 +274,20 @@ export default function RunsPage() {
             {visible.map((run) => (
               <tr
                 key={run.run_id}
-                className="border-t border-slate-800/70 hover:bg-slate-900/60"
+                className="border-t border-slate-200 hover:bg-indigo-50/40"
               >
                 <td className="px-3 py-2">
                   <input
                     type="checkbox"
                     checked={picked.includes(run.run_id)}
                     onChange={() => toggle(run.run_id)}
-                    className="accent-cyan-500"
+                    className="accent-indigo-600"
                   />
                 </td>
                 <td className="px-4 py-2 font-mono whitespace-nowrap">
                   <Link
                     href={`/runs/${run.run_id}`}
-                    className="text-cyan-400 hover:text-cyan-300 hover:underline"
+                    className="text-indigo-600 hover:text-indigo-500 hover:underline"
                   >
                     {run.run_id}
                   </Link>
@@ -265,7 +298,7 @@ export default function RunsPage() {
                 <td className="px-4 py-2 whitespace-nowrap">
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-mono ${
-                      verdictStyle[run.verdict ?? ""] ?? "bg-slate-800 text-slate-300"
+                      verdictStyle[run.verdict ?? ""] ?? "bg-slate-100 text-slate-600"
                     }`}
                   >
                     {run.verdict ?? "?"}
@@ -278,7 +311,7 @@ export default function RunsPage() {
                       .map((label) => (
                         <span
                           key={label}
-                          className="rounded bg-slate-800 px-1.5 py-0.5 text-xs font-mono text-red-300"
+                          className="rounded bg-red-50 px-1.5 py-0.5 text-xs font-mono text-red-700"
                         >
                           {label}
                         </span>
@@ -290,13 +323,13 @@ export default function RunsPage() {
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 max-w-sm truncate text-slate-300">
+                <td className="px-4 py-2 max-w-sm truncate text-slate-700">
                   {run.task}
                 </td>
-                <td className="px-4 py-2 text-right text-slate-400">
+                <td className="px-4 py-2 text-right text-slate-500">
                   {run.event_count}
                 </td>
-                <td className="px-4 py-2 text-right font-mono text-slate-300">
+                <td className="px-4 py-2 text-right font-mono text-slate-700">
                   {fmtCost(run.cost_usd)}
                 </td>
                 <td className="px-4 py-2 text-slate-500 text-xs whitespace-nowrap">

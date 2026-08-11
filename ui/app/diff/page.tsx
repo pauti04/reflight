@@ -68,7 +68,7 @@ function HighlightedLine({ text, other }: { text: string; other: string }) {
     <>
       {tokens.map((token, i) =>
         changed.has(i) ? (
-          <mark key={i} className="rounded bg-red-500/30 px-0.5 text-red-100">
+          <mark key={i} className="rounded bg-red-200 px-0.5 font-semibold text-red-900">
             {token}
           </mark>
         ) : (
@@ -94,7 +94,7 @@ function Column({
 }) {
   return (
     <div>
-      <h2 className="mb-2 font-mono text-sm text-cyan-400">
+      <h2 className="mb-2 font-mono text-sm text-indigo-600">
         <Link href={`/runs/${title}`} className="hover:underline">
           {title}
         </Link>
@@ -113,13 +113,13 @@ function Column({
               key={i}
               className={`rounded px-2 py-1.5 text-xs font-mono ${
                 state === "diverged"
-                  ? "bg-red-950/70 ring-1 ring-red-800 text-red-200"
+                  ? "bg-red-50 ring-1 ring-red-300 text-red-800"
                   : state === "after"
-                    ? "bg-slate-900/40 text-slate-500"
-                    : "bg-slate-900/70 text-slate-300"
+                    ? "border border-slate-200/70 bg-slate-100/60 text-slate-400"
+                    : "border border-slate-200 bg-white text-slate-700"
               }`}
             >
-              <span className="mr-2 text-slate-600">{i}</span>
+              <span className="mr-2 text-slate-400">{i}</span>
               {state === "diverged" ? (
                 <HighlightedLine text={summarize(event)} other={summarize(counterpart[i])} />
               ) : (
@@ -145,8 +145,8 @@ function DiffView() {
   }, [a, b]);
 
   if (!a || !b)
-    return <p className="text-slate-400">Pick two runs on the runs page to diff.</p>;
-  if (error) return <p className="font-mono text-red-400">{error}</p>;
+    return <p className="text-slate-600">Pick two runs on the runs page to diff.</p>;
+  if (error) return <p className="font-mono text-red-600">{error}</p>;
   if (!diff) return <p className="text-slate-500">loading…</p>;
 
   const rows = Math.max(diff.a_len, diff.b_len);
@@ -154,7 +154,7 @@ function DiffView() {
     <div>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">Run diff</h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-600">
           {diff.identical ? (
             "The runs are identical."
           ) : diff.divergence_seq == null ? (
@@ -162,7 +162,7 @@ function DiffView() {
           ) : (
             <>
               Events 0–{diff.divergence_seq - 1} are identical; first divergence at{" "}
-              <span className="font-mono text-red-300">
+              <span className="font-mono text-red-600">
                 seq {diff.divergence_seq}
               </span>
               .

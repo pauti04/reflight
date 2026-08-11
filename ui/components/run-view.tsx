@@ -39,7 +39,7 @@ function RequestView({ request }: { request: AgentEvent }) {
   const tools: AgentEvent[] = request.tools ?? [];
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
+      <summary className="cursor-pointer text-slate-500 hover:text-slate-800">
         request — {messages.length} message{messages.length === 1 ? "" : "s"}
         {request.system ? " + system" : ""}
         {tools.length ? ` + ${tools.length} tools` : ""}
@@ -89,7 +89,7 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
   const snippet = forkSnippet(run, seq);
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
+      <summary className="cursor-pointer text-slate-500 hover:text-slate-800">
         fork from this event
       </summary>
       <div className="relative mt-2">
@@ -114,12 +114,12 @@ function ForkHint({ run, seq }: { run: Run; seq: number }) {
 }
 
 const dotColor: Record<string, string> = {
-  run_start: "bg-slate-500",
+  run_start: "bg-slate-400",
   llm_call: "bg-violet-400",
   tool_call: "bg-emerald-400",
   state_snapshot: "bg-violet-400",
   error: "bg-red-500",
-  run_end: "bg-slate-300",
+  run_end: "bg-slate-500",
 };
 
 function isFailure(event: AgentEvent): boolean {
@@ -169,16 +169,16 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
     <div className="space-y-4">
       <div className="flex items-baseline gap-3">
         <span className="font-mono text-slate-500">seq {event.seq}</span>
-        <span className="font-mono font-semibold text-slate-100">
+        <span className="font-mono font-semibold text-slate-900">
           {event.type}
         </span>
         {failure && (
-          <span className="rounded bg-red-900/60 px-2 py-0.5 text-xs font-mono text-red-300">
+          <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-mono text-red-700">
             FAIL
           </span>
         )}
         {row.cost_usd != null && (
-          <span className="font-mono text-xs text-slate-400">
+          <span className="font-mono text-xs text-slate-600">
             {fmtCost(row.cost_usd)}
           </span>
         )}
@@ -186,18 +186,18 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
 
       {event.type === "llm_call" && (
         <div className="text-sm space-y-2">
-          <div className="text-slate-400 font-mono text-xs">
+          <div className="text-slate-500 font-mono text-xs">
             {event.response?.model} · stop_reason: {event.response?.stop_reason} ·{" "}
             {event.response?.usage?.input_tokens}/
             {event.response?.usage?.output_tokens} tok
           </div>
           {(event.response?.content ?? []).map((block: AgentEvent, i: number) =>
             block.type === "text" ? (
-              <p key={i} className="whitespace-pre-wrap text-slate-200">
+              <p key={i} className="whitespace-pre-wrap text-slate-800">
                 {block.text}
               </p>
             ) : (
-              <p key={i} className="font-mono text-emerald-300">
+              <p key={i} className="font-mono text-emerald-700">
                 {block.name}({JSON.stringify(block.input)})
               </p>
             ),
@@ -207,10 +207,10 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
 
       {event.type === "tool_call" && (
         <div className="text-sm space-y-2 font-mono">
-          <p className="text-emerald-300">
+          <p className="text-emerald-700">
             {event.name}({JSON.stringify(event.input)})
           </p>
-          <p className={event.is_error ? "text-red-300" : "text-slate-200"}>
+          <p className={event.is_error ? "text-red-600" : "text-slate-800"}>
             → {typeof event.result === "string" ? event.result : JSON.stringify(event.result)}
           </p>
         </div>
@@ -225,7 +225,7 @@ function Inspector({ row, run }: { row: EventRow; run: Run }) {
       )}
 
       <details className="text-xs">
-        <summary className="cursor-pointer text-slate-500 hover:text-slate-300">
+        <summary className="cursor-pointer text-slate-500 hover:text-slate-800">
           raw event payload
         </summary>
         <pre className="mt-2 overflow-x-auto rounded bg-slate-900 p-3 text-slate-300">
@@ -314,19 +314,19 @@ export default function RunView({ id }: { id: string }) {
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h1 className="font-mono text-lg font-semibold text-slate-50">
+        <h1 className="font-mono text-lg font-semibold text-slate-900">
           {run.run_id}
         </h1>
         <span
           className={`rounded px-2 py-0.5 text-xs font-mono ${
             run.status === "completed"
-              ? "bg-emerald-900/60 text-emerald-300"
-              : "bg-red-900/60 text-red-300"
+              ? "bg-emerald-100 text-emerald-800"
+              : "bg-red-100 text-red-700"
           }`}
         >
           {run.status}
         </span>
-        <span className="text-sm text-slate-400">{run.task}</span>
+        <span className="text-sm text-slate-600">{run.task}</span>
         <span className="font-mono text-xs text-slate-500">
           {run.model} · {run.input_tokens}/{run.output_tokens} tok ·{" "}
           {fmtCost(run.cost_usd)} · {fmtDuration(run.started_at, run.ended_at)}
@@ -335,8 +335,8 @@ export default function RunView({ id }: { id: string }) {
           <button
             onClick={onPromote}
             disabled={promoting || promoted !== null}
-            className="ml-auto rounded border border-cyan-800 bg-cyan-950/60 px-3 py-1
-                       font-mono text-xs text-cyan-300 enabled:hover:bg-cyan-900/60
+            className="ml-auto rounded border border-indigo-300 bg-indigo-50 px-3 py-1
+                       font-mono text-xs text-indigo-700 enabled:hover:bg-indigo-100
                        disabled:opacity-50"
           >
             {promoted ? "promoted" : promoting ? "promoting…" : "promote to test"}
@@ -348,11 +348,11 @@ export default function RunView({ id }: { id: string }) {
         <p className="mb-4 font-mono text-xs text-red-400">{promoteError}</p>
       )}
       {promoted && (
-        <div className="mb-5 rounded-lg border border-cyan-900/60 bg-cyan-950/20 p-3">
-          <p className="mb-2 font-mono text-xs font-semibold text-cyan-300">
+        <div className="mb-5 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-indigo-700">
             regression test written: {promoted.path}
           </p>
-          <p className="mb-2 text-xs text-slate-400">
+          <p className="mb-2 text-xs text-slate-600">
             Edit the assertions to state what SHOULD happen — then it runs in
             your normal pytest invocation (see README: pytest plugin).
           </p>
@@ -363,8 +363,8 @@ export default function RunView({ id }: { id: string }) {
       )}
 
       {(run.findings?.length ?? 0) > 0 && (
-        <div className="mb-5 rounded-lg border border-red-900/60 bg-red-950/30 p-3">
-          <p className="mb-2 font-mono text-xs font-semibold text-red-300">
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3">
+          <p className="mb-2 font-mono text-xs font-semibold text-red-700">
             {run.findings!.length} finding{run.findings!.length > 1 ? "s" : ""}
           </p>
           <ul className="space-y-1">
@@ -394,26 +394,26 @@ export default function RunView({ id }: { id: string }) {
                     <span
                       className={`mr-2 rounded px-1.5 py-0.5 font-mono text-xs ${
                         f.severity === "fail"
-                          ? "bg-red-900/70 text-red-200"
-                          : "bg-amber-900/70 text-amber-200"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-800"
                       }`}
                     >
                       {f.label}
                       {seqs.length > 1 && ` ×${seqs.length}`}
                     </span>
-                    <span className="text-slate-300">{f.detail}</span>
+                    <span className="text-slate-700">{f.detail}</span>
                     <span className="ml-2 font-mono text-xs text-slate-500">
                       seq {seqs.join(", ")} · conf {f.confidence.toFixed(2)}
                     </span>
                   </button>
                   {(f.seen_in?.length ?? 0) > 0 && (
-                    <span className="ml-2 font-mono text-xs text-cyan-300">
+                    <span className="ml-2 font-mono text-xs text-indigo-600">
                       seen again — same bug in {f.seen_in!.length} other run
                       {f.seen_in!.length > 1 ? "s" : ""}:{" "}
                       {f.seen_in!.slice(0, 4).map((id, j) => (
                         <span key={id}>
                           {j > 0 && ", "}
-                          <a href={`${BASE}/runs/${id}`} className="underline hover:text-cyan-200">
+                          <a href={`${BASE}/runs/${id}`} className="underline hover:text-indigo-500">
                             {id}
                           </a>
                         </span>
@@ -429,8 +429,8 @@ export default function RunView({ id }: { id: string }) {
       )}
 
       {run.promoted_yaml && (
-        <details className="mb-5 rounded-lg border border-cyan-900/60 bg-cyan-950/20 p-3">
-          <summary className="cursor-pointer font-mono text-xs font-semibold text-cyan-300">
+        <details className="mb-5 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+          <summary className="cursor-pointer font-mono text-xs font-semibold text-indigo-700">
             PROMOTE — this failure is one command from being a regression test.
             `reflight promote {run.run_id}` writes:
           </summary>
@@ -450,8 +450,8 @@ export default function RunView({ id }: { id: string }) {
             if (!playing && selected >= visible.length - 1) setSelected(0);
             setPlaying((p) => !p);
           }}
-          className="mr-2 rounded border border-cyan-800 bg-cyan-950/60 px-3 py-0.5
-                     font-mono text-xs text-cyan-300 hover:bg-cyan-900/60"
+          className="mr-2 rounded border border-indigo-300 bg-indigo-50 px-3 py-0.5
+                     font-mono text-xs text-indigo-600 hover:bg-cyan-900/60"
         >
           {playing ? "PAUSE" : "REPLAY"}
         </button>
@@ -471,8 +471,8 @@ export default function RunView({ id }: { id: string }) {
             }}
             className={`rounded px-2 py-0.5 font-mono text-xs ${
               typeFilter === key
-                ? "bg-slate-700 text-slate-100 ring-1 ring-slate-500"
-                : "bg-slate-900 text-slate-500 hover:text-slate-300"
+                ? "bg-slate-200 text-slate-900 ring-1 ring-slate-400"
+                : "bg-slate-100 text-slate-500 hover:text-slate-800"
             }`}
           >
             {key === "llm_call" ? "llm" : key === "tool_call" ? "tools" : key} {n}
@@ -482,7 +482,7 @@ export default function RunView({ id }: { id: string }) {
 
       {/* strip chart: the whole recording at a glance — every event is a tick */}
       {events.length > 1 && (
-        <div className="mb-4 flex items-end gap-px rounded-md border border-slate-800 bg-slate-950 px-2 pb-1.5 pt-2">
+        <div className="mb-4 flex items-end gap-px rounded-md border border-slate-200 bg-white px-2 pb-1.5 pt-2">
           {events.map((row, i) => {
             const isSelected =
               visible[Math.min(selected, Math.max(visible.length - 1, 0))]?.event.seq ===
@@ -499,16 +499,16 @@ export default function RunView({ id }: { id: string }) {
                 }}
                 className={`flex-1 rounded-sm transition-all hover:h-4 ${
                   isSelected
-                    ? "h-4 ring-1 ring-cyan-500"
+                    ? "h-4 ring-1 ring-indigo-600"
                     : "h-2.5"
                 } ${
                   failure
-                    ? "bg-red-600"
+                    ? "bg-red-500"
                     : row.event.type === "llm_call"
-                      ? "bg-violet-900/80"
+                      ? "bg-violet-300"
                       : row.event.type === "tool_call"
-                        ? "bg-emerald-900/80"
-                        : "bg-slate-700"
+                        ? "bg-emerald-300"
+                        : "bg-slate-300"
                 }`}
               />
             );
@@ -531,8 +531,8 @@ export default function RunView({ id }: { id: string }) {
                   }}
                   className={`flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm ${
                     i === selected
-                      ? "bg-slate-800/80 ring-1 ring-slate-700"
-                      : "hover:bg-slate-900/70"
+                      ? "bg-white ring-1 ring-indigo-300 shadow-sm"
+                      : "hover:bg-white/80"
                   }`}
                 >
                   <span
@@ -543,10 +543,10 @@ export default function RunView({ id }: { id: string }) {
                   <span className="w-8 shrink-0 font-mono text-xs text-slate-500">
                     {event.seq}
                   </span>
-                  <span className="w-28 shrink-0 font-mono text-xs text-slate-400">
+                  <span className="w-28 shrink-0 font-mono text-xs text-slate-600">
                     {event.type}
                   </span>
-                  <span className="truncate text-slate-300">
+                  <span className="truncate text-slate-700">
                     {summarize(event)}
                   </span>
                 </button>
@@ -556,7 +556,7 @@ export default function RunView({ id }: { id: string }) {
         </ol>
 
         {/* inspector */}
-        <div className="instrument rounded-lg border border-slate-800 bg-slate-900/40 p-4 lg:sticky lg:top-6 self-start">
+        <div className="instrument rounded-lg border border-slate-200 bg-white p-4 lg:sticky lg:top-6 self-start">
           {visible.length > 0 ? (
             <Inspector row={visible[Math.min(selected, visible.length - 1)]} run={run} />
           ) : (
@@ -564,7 +564,7 @@ export default function RunView({ id }: { id: string }) {
           )}
         </div>
       </div>
-      <p className="mt-4 text-xs text-slate-600">
+      <p className="mt-4 text-xs text-slate-400">
         ↑/↓ or j/k to step through the run
       </p>
     </div>
